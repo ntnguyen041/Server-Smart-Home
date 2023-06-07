@@ -1,4 +1,5 @@
 const User = require('../model/user.model');
+const Home = require('../model/home.model')
 
 // Lấy danh sách user từ MongoDB và gửi về client
 const getUsers = (socket) => {
@@ -14,11 +15,15 @@ const getUsers = (socket) => {
 // Tạo user mới và lưu vào MongoDB
 const createUser = async (userData, io) => {
   try {
-    const user = new User(userData);
+    const { nameUser, phoneUser, nameHome } = userData;
+    const home = new Home({ nameHome })
+    await home.save();
+    const user = new User({ nameUser, phoneUser });
+    user.homeId.push(home._id)
     await user.save();
-    io.emit('userCreated', user);
   } catch (error) {
     console.error(error);
+    throw new Error("Error creating user");
   }
 };
 
