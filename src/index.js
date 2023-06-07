@@ -8,7 +8,6 @@ const userController = require('./controller/user.controller')
 const roomController = require('./controller/room.controller')
 const deviceController = require('./controller/device.controller')
 const homeController = require('./controller/home.controller')
-
 const app = express();
 var port =process.env.PORT||3001;
 
