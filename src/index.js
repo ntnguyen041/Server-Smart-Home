@@ -4,7 +4,6 @@ const http = require("http");
 const cors = require("cors");
 const { Server } = require("socket.io");
 const userController = require('./controller/user.controller')
-require('dotenv').config();
 const app = express();
 const port = 3000;
 
@@ -30,18 +29,16 @@ const io = new Server(server, {
 });
 
 io.on("connection", (socket) => {
-    socket.on('sendData', (data) => {
-        console.log(data);
-        io.emit({ value: data.value });
-    });
 
     // Tải danh sách user từ MongoDB và gửi về client
-    userController.getUsers(socket);
+    // userController.getUsers(socket);
+    // roomController.getRooms(socket);
 
     socket.on("disconnect", () => {
         console.log(`User disconnect: ${socket.id}`)
     });
 
+    // User
     socket.on('createUser', async (userData) => {
         userController.createUser(userData, io);
     });
@@ -53,6 +50,32 @@ io.on("connection", (socket) => {
     socket.on('deleteUser', async (userId) => {
         userController.deleteUser(userId, io);
     });
+
+    //Room
+    socket.on('createRoom', async (roomData) => {
+        roomController.createRoom(roomData, io);
+    });
+
+    socket.on('updateRoom', async (roomData) => {
+        roomController.updateRoom(roomData, io);
+    });
+
+    socket.on('deleteRoom', async (roomId) => {
+        roomController.deleteRoom(roomId, io);
+    });
+    // Device
+    socket.on('createDevice', async (deviceData) => {
+        deviceController.createDevice(deviceData, io);
+    });
+    socket.on('getDevice', async (deviceData) => {
+        deviceController.getList(deviceData, io);
+    });
+
+    // Home
+    socket.on('createHome', async (homeData) => {
+        homeController.createHome(homeData, io);
+    });
+    
 });
 
 server.listen(port, () => {
