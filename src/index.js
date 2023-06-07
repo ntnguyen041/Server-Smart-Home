@@ -4,6 +4,7 @@ const http = require("http");
 const cors = require("cors");
 const { Server } = require("socket.io");
 const userController = require('./controller/user.controller')
+require('dotenv').config();
 const app = express();
 const port = 3000;
 
