@@ -1,9 +1,14 @@
 const Room = require('../model/room.model');
+const Home = require('../model/home.model');
+const User = require('../model/user.model');
+
+const homeController = require('../controller/home.controller')
+
 
 const roomController = {
   getList: async (req, res) => {
     try {
-      const rooms = await Room.find().populate('devices');
+      const rooms = await Room.find().populate('deviceId');
       res.json(rooms);
     } catch (error) {
       console.log(error);
@@ -25,18 +30,34 @@ const roomController = {
     }
   },
 
-  createRoom: async (req, res) => {
-    const { nameRoom, homeID } = req;
-    console.log(nameRoom, homeID)
-    const newRoom = new Room({ nameRoom, homeID});
-    console.log(newRoom)
-    try {
-      const savedRoom = await newRoom.save();
-      // res.json(savedRoom);
-    } catch (error) {
-      console.log(error);
-      // res.status(500).json({ message: 'Internal server error' });
-    }
+  createRoom: async (roomData, io) => {
+    const { nameRoom, imageRoom, uid } = roomData;
+
+    User.findOne({ uid: uid })
+      .populate('homeId')
+      .then((users) => {
+        const hoomId = users.homeId[0]._id.toString();
+        const room = new Room({ nameRoom, imageRoom });
+
+        Home.findById(hoomId)
+          .then(async (home) => {
+            if (!home) {
+              throw new Error('Home not found');
+            }
+            home.roomId.push(room._id);
+            await home.save();
+          })
+          .then(async (home) => {
+            await room.save();
+            await homeController.getList(io);
+          })
+          .catch((err) => {
+            console.error(err);
+          });
+      })
+      .catch((err) => {
+        console.error(err);
+      });
   },
 
   updateRoom: async (req, res) => {
