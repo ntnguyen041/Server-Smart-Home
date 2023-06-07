@@ -42,6 +42,9 @@ io.on("connection", (socket) => {
     });
 
     // User
+    socket.on('getUser', async (uid) => {
+        userController.getUsers(uid, io);
+    });
     socket.on('createUser', async (userData) => {
         userController.createUser(userData, io);
     });
@@ -78,7 +81,10 @@ io.on("connection", (socket) => {
     socket.on('createHome', async (homeData) => {
         homeController.createHome(homeData, io);
     });
-    
+    socket.on('getRoomList', async () => {
+        homeController.getList(io);
+    });
+
 });
 
 server.listen(port, () => {
