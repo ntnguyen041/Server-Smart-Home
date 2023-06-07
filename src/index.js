@@ -5,13 +5,9 @@ const cors = require("cors");
 require('dotenv').config();
 const { Server } = require("socket.io");
 const userController = require('./controller/user.controller')
-<<<<<<< HEAD
-=======
 const roomController = require('./controller/room.controller')
 const deviceController = require('./controller/device.controller')
 const homeController = require('./controller/home.controller')
-
->>>>>>> main
 const app = express();
 var port =process.env.PORT||3001;
 
