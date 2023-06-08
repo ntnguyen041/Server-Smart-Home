@@ -41,9 +41,6 @@ const roomController = {
 
         Home.findById(hoomId)
           .then(async (home) => {
-            if (!home) {
-              throw new Error('Home not found');
-            }
             home.roomId.push(room._id);
             await home.save();
           })
