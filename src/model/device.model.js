@@ -1,13 +1,17 @@
 const mongoose = require('mongoose');
 
 const deviceSchema = new mongoose.Schema({
-  name: { type: String, required: true },
-  iconName: {type: String, require: true},
+  nameDevice: { type: String, required: true },
+  iconName: { type: String, required: true },
+  homeId: { type: String, required: true },
+  roomName: { type: String, required: true },
+  roomId: { type: String, required: true },
   status: { type: Boolean, default: false },
-  consumes: {type: Number, default: 0},
-  timeOn: {type: Date, require: false},
-  timeOff: {type: Date, require: false},
-  roomId: { type: mongoose.Schema.Types.ObjectId, ref: 'Room' }
+  consumes: { type: Number, default: 0 },
+  timeOn: { type: String, default: null },
+  timeOff: { type: String, default: null },
+  dayRunning: { type: [String], default: [] },
+  dayRunningStatus: { type: Boolean, default: true }
 });
 
 module.exports = mongoose.model('Device', deviceSchema);

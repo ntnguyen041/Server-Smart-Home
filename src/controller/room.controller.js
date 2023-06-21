@@ -1,18 +1,17 @@
 const Room = require('../model/room.model');
 const Home = require('../model/home.model');
 const User = require('../model/user.model');
-
-const homeController = require('../controller/home.controller')
-
+const Device = require('../model/device.model');
+const homeController = require('../controller/home.controller');
 
 const roomController = {
-  getList: async (req, res) => {
+  getList: async (data, io, socket) => {
     try {
-      const rooms = await Room.find().populate('deviceId');
-      res.json(rooms);
+      const { homeId, uid } = data;
+      const home = await Home.findById(homeId).populate('roomId');
+      io.to(uid).emit("listRoom", home.roomId);
     } catch (error) {
       console.log(error);
-      res.status(500).json({ message: 'Internal server error' });
     }
   },
 
@@ -30,34 +29,19 @@ const roomController = {
     }
   },
 
-  createRoom: async (roomData, io) => {
-    const { nameRoom, imageRoom, uid } = roomData;
-
-    User.findOne({ uid: uid })
-      .populate('homeId')
-      .then((users) => {
-        const hoomId = users.homeId[0]._id.toString();
-        const room = new Room({ nameRoom, imageRoom });
-
-        Home.findById(hoomId)
-          .then(async (home) => {
-            if (!home) {
-              throw new Error('Home not found');
-            }
-            home.roomId.push(room._id);
-            await home.save();
-          })
-          .then(async (home) => {
-            await room.save();
-            await homeController.getList(io);
-          })
-          .catch((err) => {
-            console.error(err);
-          });
-      })
-      .catch((err) => {
-        console.error(err);
-      });
+  createRoom: async (roomData, io, socket) => {
+    const { nameRoom, imageRoom, uid, homeId } = roomData;
+    try {
+      const user = await User.findOne({ uid: uid }).populate('homeId');
+      const home = user.homeId[0];
+      const room = new Room({ nameRoom, imageRoom });
+      home.roomId.push(room._id);
+      await home.save();
+      await room.save();
+      await roomController.getList(homeId, io, socket);
+    } catch (error) {
+      console.error(error);
+    }
   },
 
   updateRoom: async (req, res) => {
@@ -75,17 +59,26 @@ const roomController = {
     }
   },
 
-  deleteRoom: async (req, res) => {
-    const { roomId } = req.params;
+  deleteRoom: async (roomData, io, socket) => {
+    const { homeId, roomId } = roomData;
+
     try {
-      const room = await Room.findByIdAndDelete(roomId);
-      if (!room) {
-        return res.status(404).json({ message: 'Room not found' });
-      }
-      res.json(room);
+      // Xóa phòng
+      await Room.findByIdAndDelete(roomId);
+
+      // Xóa tất cả các thiết bị liên quan đến phòng
+      await Device.deleteMany({ roomId: roomId });
+
+      // Cập nhật tài liệu home
+      await Home.findOneAndUpdate(
+        { roomId: roomId },
+        { $pull: { roomId: roomId } },
+        { new: true }
+      );
+
+      await roomController.getList(homeId, io, socket);
     } catch (error) {
-      console.log(error);
-      res.status(500).json({ message: 'Internal server error' });
+      console.error(error);
     }
   }
 };

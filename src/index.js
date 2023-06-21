@@ -2,19 +2,17 @@ const express = require("express");
 const mongoose = require('mongoose');
 const http = require("http");
 const cors = require("cors");
-require('dotenv').config();
 const { Server } = require("socket.io");
 const userController = require('./controller/user.controller')
 const roomController = require('./controller/room.controller')
 const deviceController = require('./controller/device.controller')
-const homeController = require('./controller/home.controller');
- 
+const homeController = require('./controller/home.controller')
 const app = express();
-var port =process.env.PORT||3001;
+var port = process.env.PORT || 3001;
 
 //mongodb+srv://jiduy02:<password>@vn.ldsecnv.mongodb.net/?retryWrites=true&w=majority
 //mongodb+srv://admin:<password>@smarthome.dahnw7r.mongodb.net/?retryWrites=true&w=majority
-//const URL_MONGO = "mongodb+srv://admin:admin123@smarthome.dahnw7r.mongodb.net/?retryWrites=true&w=majority";
+// const URL_MONGO = "mongodb+srv://admin:admin123@smarthome.dahnw7r.mongodb.net/?retryWrites=true&w=majority";
 
 app.use(cors());
 app.use(express.json());
@@ -23,12 +21,14 @@ const server = http.createServer(app);
 
 mongoose.connect(process.env.URL_MONGO, {
     useNewUrlParser: true,
-    useUnifiedTopology: true,
-});
+    useUnifiedTopology: true
+})
+    .then(() => console.log('Connected to MongoDB'))
+    .catch((err) => console.error('Could not connect to MongoDB', err));
 
 const io = new Server(server, {
     cors: {
-        origin: [`http://localhost:3000`],
+        origin: [`http://localhost:3000`,`https://smarthome-ckc.onrender.com`],
         methods: ["GET", "POST"],
     },
 });
@@ -36,57 +36,91 @@ const io = new Server(server, {
 io.on("connection", (socket) => {
 
     console.log(`User connect: ${socket.id}`);
-    // Tải danh sách user từ MongoDB và gửi về client
-    // userController.getUsers(socket);
-    // roomController.getRooms(socket);
+
+    socket.on('joinRoom', data => {
+        socket.join(data);
+    })
 
 
     socket.on("disconnect", () => {
         console.log(`User disconnect: ${socket.id}`)
     });
+
     // User
      
     socket.on('getUser', async (uid) => {
-        userController.getUsers(uid, io);
+        userController.getUsers(uid, io, socket);
     });
     socket.on('createUser', async (userData) => {
-        userController.createUser(userData, io);
+        userController.createUser(userData, io, socket);
     });
 
     socket.on('updateUser', async (userData) => {
-        userController.updateUser(userData, io);
+        userController.updateUser(userData, io, socket);
     });
 
     socket.on('deleteUser', async (userId) => {
-        userController.deleteUser(userId, io);
+        userController.deleteUser(userId, io, socket);
     });
 
     //Room
+    socket.on('getRoomList', async (homeId) => {
+        roomController.getList(homeId, io, socket);
+    });
+
     socket.on('createRoom', async (roomData) => {
-        roomController.createRoom(roomData, io);
+        roomController.createRoom(roomData, io, socket);
     });
 
     socket.on('updateRoom', async (roomData) => {
-        roomController.updateRoom(roomData, io);
+        roomController.updateRoom(roomData, io, socket);
     });
 
     socket.on('deleteRoom', async (roomId) => {
-        roomController.deleteRoom(roomId, io);
+        roomController.deleteRoom(roomId, io, socket);
     });
+
+
+
     // Device
     socket.on('createDevice', async (deviceData) => {
-        deviceController.createDevice(deviceData, io);
+        deviceController.createDevice(deviceData, io, socket);
     });
+
     socket.on('getDevice', async (deviceData) => {
-        deviceController.getList(deviceData, io);
+        deviceController.getList(deviceData, io, socket);
     });
+
+    socket.on('updateOnOff', async (dataDevice) => {
+        deviceController.updateOnOff(dataDevice, io, socket);
+    })
+
+    socket.on('getDeviceRunning', async (homdId) => {
+        deviceController.getListDevicesRunning(homdId, io, socket);
+    })
+    socket.on('deleteDevice', async (deivceData) => {
+        deviceController.deleteDevice(deivceData, io, socket);
+    })
+
+    socket.on('listDeviceDropDown', () => {
+        deviceController.getDropDownList(io, socket);
+    })
+
+    socket.on('updateDeviceOnOff', async (deivceData) => {
+        deviceController.updateDeviceOnOff(deivceData, io, socket);
+    })
+
+    socket.on('getListDeviceTime', async () => {
+        deviceController.getListDeviceTime(io, socket);
+    })
+
+    socket.on('updateScheduleOnOff', async (deviceData) => {
+        deviceController.updateScheduleOnOff(deviceData, io, socket);
+    })
 
     // Home
     socket.on('createHome', async (homeData) => {
-        homeController.createHome(homeData, io);
-    });
-    socket.on('getRoomList', async () => {
-        homeController.getList(io);
+        homeController.createHome(homeData, io, socket);
     });
 
 });
