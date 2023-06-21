@@ -1,6 +1,22 @@
 const User = require('../model/user.model');
 const Home = require('../model/home.model')
 
+
+
+const getall = async (io, socket) => {
+  await User.find()
+    .then((users) => {
+      io.emit('listUser', users);
+      
+      console.log(users)
+    })
+    .catch((err) => {
+      console.error(err);
+    });
+};
+
+
+
 // Lấy danh sách user từ MongoDB và gửi về client
 const getUsers = (data, io) => {
   const { uid } = data;
@@ -61,4 +77,4 @@ const updateRoom = async (userId, io) => {
 
 }
 
-module.exports = { getUsers, createUser, updateUser, deleteUser, updateRoom };
+module.exports = {getall, getUsers, createUser, updateUser, deleteUser, updateRoom };

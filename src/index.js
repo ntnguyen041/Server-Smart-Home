@@ -9,7 +9,7 @@ const roomController = require('./controller/room.controller')
 const deviceController = require('./controller/device.controller')
 const homeController = require('./controller/home.controller')
 const app = express();
-var port =process.env.PORT||3001;
+var port = process.env.PORT || 3001;
 
 //mongodb+srv://jiduy02:<password>@vn.ldsecnv.mongodb.net/?retryWrites=true&w=majority
 //mongodb+srv://admin:<password>@smarthome.dahnw7r.mongodb.net/?retryWrites=true&w=majority
@@ -27,7 +27,7 @@ mongoose.connect(process.env.URL_MONGO, {
 
 const io = new Server(server, {
     cors: {
-        origin: [`http://localhost:3000`,`https://smarthome-ckc.onrender.com`],
+        origin: [`http://localhost:3000`, `https://smarthome-ckc.onrender.com`],
         methods: ["GET", "POST"],
     },
 });
@@ -39,11 +39,22 @@ io.on("connection", (socket) => {
     // userController.getUsers(socket);
     // roomController.getRooms(socket);
 
+    // socket.on('joinRoom',() => {
+    //     socket.join(socket.id)
+    // })
+
+    socket.emit('test', data)
+
+
     socket.on("disconnect", () => {
         console.log(`User disconnect: ${socket.id}`)
     });
 
     // User
+    socket.on('getall', () => {
+        userController.getall(io, socket);
+    });
+
     socket.on('getUser', async (uid) => {
         userController.getUsers(uid, io);
     });
