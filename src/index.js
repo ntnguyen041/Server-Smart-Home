@@ -7,7 +7,8 @@ const { Server } = require("socket.io");
 const userController = require('./controller/user.controller')
 const roomController = require('./controller/room.controller')
 const deviceController = require('./controller/device.controller')
-const homeController = require('./controller/home.controller')
+const homeController = require('./controller/home.controller');
+ 
 const app = express();
 var port =process.env.PORT||3001;
 
@@ -27,7 +28,7 @@ mongoose.connect(process.env.URL_MONGO, {
 
 const io = new Server(server, {
     cors: {
-        origin: [`http://localhost:3000`,`https://smarthome-ckc.onrender.com`],
+        origin: [`http://localhost:3000`],
         methods: ["GET", "POST"],
     },
 });
@@ -39,11 +40,12 @@ io.on("connection", (socket) => {
     // userController.getUsers(socket);
     // roomController.getRooms(socket);
 
+
     socket.on("disconnect", () => {
         console.log(`User disconnect: ${socket.id}`)
     });
-
     // User
+     
     socket.on('getUser', async (uid) => {
         userController.getUsers(uid, io);
     });
