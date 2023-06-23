@@ -19,7 +19,7 @@ app.use(express.json());
 
 const server = http.createServer(app);
 
-mongoose.connect(process.env.URL_MONGO, {
+mongoose.connect("mongodb+srv://admin:admin123@smarthome.dahnw7r.mongodb.net/?retryWrites=true&w=majority", {
     useNewUrlParser: true,
     useUnifiedTopology: true
 })
@@ -42,18 +42,15 @@ io.on("connection", (socket) => {
     })
 
 
-    // socket.on('joinRoom',() => {
-    //     socket.join(socket.id)
-    // })
-
-    socket.emit('test', data)
-
-
     socket.on("disconnect", () => {
         console.log(`User disconnect: ${socket.id}`)
     });
 
+
     // User
+    socket.on('getAllUser', async (userData) => {
+        userController.getAllUsers(userData, io, socket);
+    });
     socket.on('getUser', async (uid) => {
         userController.getUsers(uid, io, socket);
     });
