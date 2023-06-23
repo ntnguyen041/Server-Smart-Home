@@ -1,10 +1,10 @@
 const Home = require('../model/home.model');
 
 const homeController = {
-    getList: async (io) => {
+    getList: async (homeId, io, socket) => {
         try {
-            const homes = await Home.find().populate('roomId');
-            io.emit("listRoom", homes[0].roomId)
+            const homes = await Home.findById(homeId).populate('roomId');
+            io.to(socket.id).emit("listRoom", homes.roomId) 
         } catch (error) {
             console.log(error);
         }
@@ -14,12 +14,9 @@ const homeController = {
         console.log(nameHome);
         const newHome = new Home({ nameHome });
         try {
-            const savedRoom = await newHome.save();
-
-            // res.json(savedRoom);
+            await newHome.save();
         } catch (error) {
             console.log(error);
-            // res.status(500).json({ message: 'Internal server error' });
         }
     },
 };
