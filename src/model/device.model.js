@@ -8,6 +8,7 @@ const deviceSchema = new mongoose.Schema({
   roomId: { type: String, required: true },
   status: { type: Boolean, default: false },
   consumes: { type: Number, default: 0 },
+  countOn: { type: Number, default: 0 },
   timeOn: { type: String, default: null },
   timeOff: { type: String, default: null },
   dayRunning: { type: [String], default: [] },

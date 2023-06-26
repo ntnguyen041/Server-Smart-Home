@@ -7,19 +7,17 @@ const userController = require('./controller/user.controller')
 const roomController = require('./controller/room.controller')
 const deviceController = require('./controller/device.controller')
 const homeController = require('./controller/home.controller')
+require('dotenv').config();
+
 const app = express();
 var port = process.env.PORT || 3001;
-
-//mongodb+srv://jiduy02:<password>@vn.ldsecnv.mongodb.net/?retryWrites=true&w=majority
-//mongodb+srv://admin:<password>@smarthome.dahnw7r.mongodb.net/?retryWrites=true&w=majority
-// const URL_MONGO = "mongodb+srv://admin:admin123@smarthome.dahnw7r.mongodb.net/?retryWrites=true&w=majority";
 
 app.use(cors());
 app.use(express.json());
 
 const server = http.createServer(app);
 
-mongoose.connect("mongodb+srv://admin:admin123@smarthome.dahnw7r.mongodb.net/?retryWrites=true&w=majority", {
+mongoose.connect(process.env.URL_MONGO, {
     useNewUrlParser: true,
     useUnifiedTopology: true
 })
@@ -108,20 +106,23 @@ io.on("connection", (socket) => {
         deviceController.deleteDevice(deivceData, io, socket);
     })
 
-    socket.on('listDeviceDropDown', () => {
-        deviceController.getDropDownList(io, socket);
+    socket.on('listDeviceDropDown', (dataDevice) => {
+        deviceController.getDropDownList(dataDevice, io, socket);
     })
 
     socket.on('updateDeviceOnOff', async (deivceData) => {
         deviceController.updateDeviceOnOff(deivceData, io, socket);
     })
 
-    socket.on('getListDeviceTime', async () => {
-        deviceController.getListDeviceTime(io, socket);
+    socket.on('getListDeviceTime', async (dataDevice) => {
+        deviceController.getListDeviceTime(dataDevice, io, socket);
     })
 
     socket.on('updateScheduleOnOff', async (deviceData) => {
         deviceController.updateScheduleOnOff(deviceData, io, socket);
+    })
+    socket.on('deleteScheduleOnOff', async (deviceData) => {
+        deviceController.deleteScheduleOnOff(deviceData, io, socket);
     })
 
     // Home
