@@ -12,10 +12,6 @@ require('dotenv').config();
 const app = express();
 var port = process.env.PORT || 3001;
 
-//mongodb+srv://jiduy02:<password>@vn.ldsecnv.mongodb.net/?retryWrites=true&w=majority
-//mongodb+srv://admin:<password>@smarthome.dahnw7r.mongodb.net/?retryWrites=true&w=majority
-// const URL_MONGO = "mongodb+srv://admin:admin123@smarthome.dahnw7r.mongodb.net/?retryWrites=true&w=majority";
-
 app.use(cors());
 app.use(express.json());
 
@@ -30,25 +26,32 @@ mongoose.connect(process.env.URL_MONGO, {
 
 const io = new Server(server, {
     cors: {
-        origin: [`http://localhost:3000`,`https://smarthome-ckc.onrender.com`],
+        origin: [`http://localhost:3000`, `https://smarthome-ckc.onrender.com`],
         methods: ["GET", "POST"],
     },
 });
 
 io.on("connection", (socket) => {
-
     console.log(`User connect: ${socket.id}`);
-
     socket.on('joinRoom', data => {
         socket.join(data);
     })
 
+    socket.on('loginadmin', (data)=>{
+        userController.login(data, io);
+    })
 
     socket.on("disconnect", () => {
         console.log(`User disconnect: ${socket.id}`)
     });
 
+    socket.on("getOneUser",async(data)=>{
+        userController.getUser(data,io);
+    })
     // User
+    socket.on('getAllUser', async (userData) => {
+        userController.getAllUsers(userData, io, socket);
+    });
     socket.on('getUser', async (uid) => {
         userController.getUsers(uid, io, socket);
     });
