@@ -34,19 +34,22 @@ const io = new Server(server, {
 });
 
 io.on("connection", (socket) => {
-
     console.log(`User connect: ${socket.id}`);
-
     socket.on('joinRoom', data => {
         socket.join(data);
     })
 
+    socket.on('loginadmin', (data)=>{
+        userController.login(data, io);
+    })
 
     socket.on("disconnect", () => {
         console.log(`User disconnect: ${socket.id}`)
     });
 
-
+    socket.on("getOneUser",async(data)=>{
+        userController.getUser(data,io);
+    })
     // User
     socket.on('getAllUser', async (userData) => {
         userController.getAllUsers(userData, io, socket);

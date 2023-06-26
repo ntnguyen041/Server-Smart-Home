@@ -2,11 +2,32 @@ const User = require('../model/user.model');
 const Home = require('../model/home.model')
 
 const getAllUsers = async (userData, io, socket) => {
-  const { uid } = userData;
+  const { _id } = userData;
   await User.find()
     .then((users) => {
-      io.to(uid).emit('listUserView', users);
-    
+      io.to(_id).emit('listUserView', users);
+    })
+    .catch((err) => {
+      console.error(err);
+    });
+};
+
+//////////////login admin
+const login = (phoneNumber, io) => {
+  User.findOne({phoneUser: phoneNumber})
+    .then((users) => {
+      io.to(phoneNumber).emit('loginAD', users);
+    })
+    .catch((err) => {
+      console.error(err);
+    });
+};
+//lay 1 user
+const getUser = (data, io) => {
+  const _id = data._id;
+  User.findOne({_id: _id})
+    .then((users) => {
+      io.to(_id).emit('getUser', users);
     })
     .catch((err) => {
       console.error(err);
@@ -73,5 +94,5 @@ const updateRoom = async (userId, io) => {
 }
 
 
-module.exports = { getAllUsers, getUsers, createUser, updateUser, deleteUser, updateRoom };
+module.exports = {login,getUser, getAllUsers, getUsers, createUser, updateUser, deleteUser, updateRoom };
 

@@ -5,6 +5,7 @@ const userSchema = new mongoose.Schema({
   nameUser: { type: String, required: true },
   phoneUser: { type: String, required: true },
   imageUser: { type: String, required: false },
+  admin:{type:Number,required:false},
   homeId: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Home' }],
 });
 
