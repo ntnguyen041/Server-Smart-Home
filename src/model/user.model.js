@@ -1,10 +1,11 @@
 const mongoose = require('mongoose');
 
 const userSchema = new mongoose.Schema({
-  uid: { type: String, required: true },
   nameUser: { type: String, required: true },
   phoneUser: { type: String, required: true },
-  imageUser: { type: String, required: false },
+  imageUser: { type: String, default: null },
+  mailUser: { type: String, default: null },
+  otp: { type: String, required: true },
   homeId: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Home' }],
 });
 

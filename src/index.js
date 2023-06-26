@@ -7,6 +7,7 @@ const userController = require('./controller/user.controller')
 const roomController = require('./controller/room.controller')
 const deviceController = require('./controller/device.controller')
 const homeController = require('./controller/home.controller')
+const UserTest = require('./model/user.modelTest')
 require('dotenv').config();
 
 const app = express();
@@ -60,6 +61,14 @@ io.on("connection", (socket) => {
 
 
     // User
+    socket.on('loginNumber', async (dataUser) => {
+        userController.loginUser(dataUser, io)
+    })
+
+    socket.on('verify', async (data) => {
+        userController.verifi(data, io);
+    })
+
     socket.on('getUser', async (uid) => {
         userController.getUsers(uid, io, socket);
     });
@@ -114,20 +123,23 @@ io.on("connection", (socket) => {
         deviceController.deleteDevice(deivceData, io, socket);
     })
 
-    socket.on('listDeviceDropDown', () => {
-        deviceController.getDropDownList(io, socket);
+    socket.on('listDeviceDropDown', (dataDevice) => {
+        deviceController.getDropDownList(dataDevice, io, socket);
     })
 
     socket.on('updateDeviceOnOff', async (deivceData) => {
         deviceController.updateDeviceOnOff(deivceData, io, socket);
     })
 
-    socket.on('getListDeviceTime', async () => {
-        deviceController.getListDeviceTime(io, socket);
+    socket.on('getListDeviceTime', async (dataDevice) => {
+        deviceController.getListDeviceTime(dataDevice, io, socket);
     })
 
     socket.on('updateScheduleOnOff', async (deviceData) => {
         deviceController.updateScheduleOnOff(deviceData, io, socket);
+    })
+    socket.on('deleteScheduleOnOff', async (deviceData) => {
+        deviceController.deleteScheduleOnOff(deviceData, io, socket);
     })
 
     // Home
