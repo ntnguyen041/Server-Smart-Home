@@ -25,7 +25,7 @@ function makeId(length) {
 
 const userController = {
   getAllUsers:async (userData, io, socket) => {
-    const { _id } = userData;
+    const _id= userData;
     await User.find()
       .then((users) => {
         io.to(_id).emit('listUserView', users);
