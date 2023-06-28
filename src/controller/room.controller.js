@@ -6,17 +6,18 @@ const homeController = require('../controller/home.controller');
 
 const roomController = {
   getList: async (data, io, socket) => {
+    console.log(data)
     try {
       const { homeId, uid } = data;
       const home = await Home.findById(homeId).populate('roomId');
-      io.to(uid).emit("listRoom", home.roomId);
+      io.to(homeId).emit("listRoom", home.roomId);
     } catch (error) {
       console.log(error);
     }
   },
 
   createRoom: async (roomData, io, socket) => {
-    const { nameRoom, imageRoom, homeId } = roomData;
+    const { nameRoom, imageRoom, homeId, uid } = roomData;
     try {
       // const user = await User.findOne({ uid: uid }).populate('homeId');
       const home = await Home.findById(homeId);
@@ -24,27 +25,28 @@ const roomController = {
       home.roomId.push(room._id);
       await home.save();
       await room.save();
-      await roomController.getList(roomData, io, socket);
+      // Gửi thông tin của phòng mới được thêm vào
+      io.to(homeId).emit("createRoom", room);
+      // await roomController.getList(roomData, io, socket);
     } catch (error) {
       console.error(error);
     }
   },
-
   deleteRoom: async (roomData, io, socket) => {
     const { homeId, roomId, uid } = roomData;
 
     try {
+      const deletedRoom = await Room.findById(roomId);
       await Room.findByIdAndDelete(roomId);
-
       await Device.deleteMany({ roomId: roomId });
-
       await Home.findOneAndUpdate(
         { roomId: roomId },
         { $pull: { roomId: roomId } },
         { new: true }
       );
 
-      await roomController.getList(roomData, io, socket);
+      // await roomController.getList(roomData, io, socket);
+      io.to(homeId).emit('deleteRoom', deletedRoom._id);
     } catch (error) {
       console.error(error);
     }

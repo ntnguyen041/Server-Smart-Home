@@ -48,6 +48,8 @@ const deviceController = {
   },
 
   updateOnOff: async (dataDevice, io, socket) => {
+    io.emit('update', dataDevice);
+
     const { idDevice, status, roomId, homeId, uid } = dataDevice;
 
     try {
