@@ -26,6 +26,37 @@ function makeId(length) {
 }
 
 const userController = {
+  getAllUsers:async (userData, io, socket) => {
+    const _id= userData;
+    await User.find()
+      .then((users) => {
+        io.to(_id).emit('listUserView', users);
+      })
+      .catch((err) => {
+        console.error(err);
+      });
+  },
+  //////////////login admin
+   login:async(phoneNumber, io) => {
+    User.findOne({phoneUser: phoneNumber})
+      .then((users) => {
+        io.to(phoneNumber).emit('loginAD', users);
+      })
+      .catch((err) => {
+        console.error(err);
+      });
+  },
+  //lay 1 user
+  getUser:async (data, io) => {
+    const _id = data._id;
+    User.findOne({_id: _id})
+      .then((users) => {
+        io.to(_id).emit('getUser', users);
+      })
+      .catch((err) => {
+        console.error(err);
+      });
+  },
   getUsers: async (userData, io) => {
     const { uid } = userData;
     User.findOne({ uid: uid })
@@ -36,7 +67,6 @@ const userController = {
         console.error(err);
       });
   },
-
   // Tạo user mới và lưu vào MongoDB
   createUser: async (userData, io) => {
     try {

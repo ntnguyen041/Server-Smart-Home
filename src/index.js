@@ -7,16 +7,11 @@ const userController = require('./controller/user.controller')
 const roomController = require('./controller/room.controller')
 const deviceController = require('./controller/device.controller')
 const homeController = require('./controller/home.controller')
-const UserTest = require('./model/user.modelTest')
 require('dotenv').config();
 const User = require('./model/user.model')
 
 const app = express();
 var port = process.env.PORT || 3001;
-
-//mongodb+srv://jiduy02:<password>@vn.ldsecnv.mongodb.net/?retryWrites=true&w=majority
-//mongodb+srv://admin:<password>@smarthome.dahnw7r.mongodb.net/?retryWrites=true&w=majority
-// const URL_MONGO = "mongodb+srv://admin:admin123@smarthome.dahnw7r.mongodb.net/?retryWrites=true&w=majority";
 
 app.use(cors());
 app.use(express.json());
@@ -29,10 +24,10 @@ mongoose.connect(process.env.URL_MONGO, {
 })
     .then(() => console.log('Connected to MongoDB'))
     .catch((err) => console.error('Could not connect to MongoDB', err));
-
+    // `http://localhost:3000`, 
 const io = new Server(server, {
     cors: {
-        origin: `http://localhost:3001`,
+        origin: [`https://smarthome-ckc.onrender.com`],
         methods: ["GET", "POST"],
     },
 });
@@ -115,31 +110,21 @@ io.on("connection", (socket) => {
         socket.join(token);
     })
 
+    socket.on('loginadmin', (data)=>{
+        userController.login(data, io);
+    })
+
     socket.on("disconnect", () => {
         console.log(`User disconnect: ${socket.id}`)
     });
 
-    const randomInRange = (a, b) =>
-        Math.floor(Math.random() * (b - a + 1)) + a;
-
-
-    setInterval(() => {
-        const temperature = randomInRange(25, 30);
-        const inDoor = randomInRange(20, 25);
-        const outDoor = randomInRange(30, 35);
-        socket.emit('randomNumber', { temperature, inDoor, outDoor });
-    }, 2000);
-
-
+    socket.on("getOneUser",async(data)=>{
+        userController.getUser(data,io);
+    })
     // User
-    socket.on('loginNumber', async (dataUser) => {
-        userController.loginUser(dataUser, io)
-    })
-
-    socket.on('verify', async (data) => {
-        userController.verifi(data, io);
-    })
-
+    socket.on('getAllUser', async (userData) => {
+        userController.getAllUsers(userData, io, socket);
+    });
     socket.on('getUser', async (uid) => {
         userController.getUsers(uid, io, socket);
     });
