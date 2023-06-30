@@ -30,6 +30,7 @@ const userController = {
     User.findOne({ phoneUser: phoneNumber })
       .then((users) => {
         io.to(phoneNumber).emit('loginAD', users);
+        console.log(users)
       })
       .catch((err) => {
         console.error(err);

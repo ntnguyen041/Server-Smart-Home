@@ -5,6 +5,17 @@ const Device = require('../model/device.model');
 const homeController = require('../controller/home.controller');
 
 const roomController = {
+  // getListRoom:async(data,io,socket)=>{
+  //   try {
+  //     const {_id} = "649bcb945ce38f6aebea335e";
+  //     console.log(data)
+  //     const home = await Home.findOne(_id);
+  //     console.log(home)
+  //     // io.to(homeId).emit("listRoom", home.roomId);
+  //   } catch (error) {
+  //     console.log(error);
+  //   }
+  // },
   getList: async (data, io, socket) => {
     try {
       const { homeId, uid } = data;

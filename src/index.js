@@ -17,7 +17,6 @@ app.use(cors());
 app.use(express.json());
 
 const server = http.createServer(app);
-
 mongoose.connect(process.env.URL_MONGO, {
     useNewUrlParser: true,
     useUnifiedTopology: true
@@ -27,7 +26,7 @@ mongoose.connect(process.env.URL_MONGO, {
 // `http://localhost:3000`, 
 const io = new Server(server, {
     cors: {
-        origin: [`https://smarthome-ckc.onrender.com`],
+        origin: [`http://localhost:3000`],
         methods: ["GET", "POST"],
     },
 });
@@ -161,6 +160,10 @@ io.on("connection", (socket) => {
     });
 
     //Room
+    socket.on('getRoomLists', async (homeId) => {
+        roomController.getListRoom(homeId, io, socket);
+    });
+
     socket.on('getRoomList', async (homeId) => {
         roomController.getList(homeId, io, socket);
     });
@@ -227,6 +230,9 @@ io.on("connection", (socket) => {
     socket.on('createHome', async (homeData) => {
         homeController.createHome(homeData, io, socket);
     });
+    socket.on("getitemhome",async(data)=>{
+        homeController.getList(data, io, socket)
+    })
 
 });
 
