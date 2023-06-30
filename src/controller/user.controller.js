@@ -26,20 +26,8 @@ function makeId(length) {
 }
 
 const userController = {
-  getAllUsers:async (userData, io, socket) => {
-    const _id= userData;
-    await User.find()
-      .then((users) => {
-        io.to(_id).emit('listUserView', users);
-      })
-      .catch((err) => {
-        console.error(err);
-      });
-  },
-  //////////////login admin
-   login:async(phoneNumber, io) => {
-    console.log(phoneNumber);
-    User.findOne({phoneUser: phoneNumber})
+  login: async (phoneNumber, io) => {
+    User.findOne({ phoneUser: phoneNumber })
       .then((users) => {
         io.to(phoneNumber).emit('loginAD', users);
         console.log(users)
@@ -49,11 +37,13 @@ const userController = {
       });
   },
   //lay 1 user
-  getUser:async (data, io) => {
-    const _id = data._id;
-    User.findOne({_id: _id})
+  getUser: async (dataUser, io) => {
+    const { uid, homeId } = dataUser;
+
+    
+    User.findOne({ uid: uid })
       .then((users) => {
-        io.to(_id).emit('getUser', users);
+        io.to(homeId).emit('getUser', users);
       })
       .catch((err) => {
         console.error(err);

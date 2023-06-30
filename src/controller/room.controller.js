@@ -25,8 +25,21 @@ const roomController = {
       console.log(error);
     }
   },
+
+  selectRoom: async (data, io, socket) => {
+    // console.log(data)
+    try {
+      const { homeId, uid } = data;
+      const home = await Home.findById(homeId).populate('roomId');
+      io.to(homeId).emit("selectListRoom", home.roomId);
+    } catch (error) {
+      console.log(error);
+    }
+  },
+
   createRoom: async (roomData, io, socket) => {
     const { nameRoom, imageRoom, homeId, uid } = roomData;
+
     try {
       // const user = await User.findOne({ uid: uid }).populate('homeId');
       const home = await Home.findById(homeId);

@@ -23,7 +23,7 @@ mongoose.connect(process.env.URL_MONGO, {
 })
     .then(() => console.log('Connected to MongoDB'))
     .catch((err) => console.error('Could not connect to MongoDB', err));
-    // `http://localhost:3000`, 
+// `http://localhost:3000`, 
 const io = new Server(server, {
     cors: {
         origin: [`http://localhost:3000`],
@@ -105,28 +105,47 @@ io.on("connection", (socket) => {
 
     console.log(`User connect: ${socket.id}`);
 
-    socket.on('joinRoom', token => {
-        socket.join(token);
+
+    socket.on('buttonState', data => {
+        console.log(data)
     })
 
-    socket.on('loginadmin', (data)=>{
-         userController.login(data, io);
-       
+    socket.on('DataSensor', data => {
+        io.emit('DataSensor', data)
+    })
+
+
+    socket.on('joinRoom', token => {
+        socket.join(token);
+        socket.emit('checkJoinRoom', { status: true, homeId: token })
+    })
+
+    function getRandomArbitrary(min, max) {
+        return Math.floor(Math.random() * min) + max;
+    }
+
+
+    setInterval(function () {
+        socket.emit('randomNumber', { temperature: getRandomArbitrary(10, 25), inDoor: getRandomArbitrary(25, 35), outDoor: getRandomArbitrary(25, 35) })
+    }, 2000);
+
+    socket.on('loginadmin', (data) => {
+        userController.login(data, io);
     })
 
     socket.on("disconnect", () => {
         console.log(`User disconnect: ${socket.id}`)
     });
 
-    socket.on("getOneUser",async(data)=>{
-        userController.getUser(data,io);
+    socket.on("getOneUser", async (data) => {
+        userController.getUser(data, io);
     })
     // User
     socket.on('getAllUser', async (userData) => {
         userController.getAllUsers(userData, io, socket);
     });
     socket.on('getUser', async (uid) => {
-        userController.getUsers(uid, io, socket);
+        userController.getUser(uid, io, socket);
     });
     socket.on('createUser', async (userData) => {
         userController.createUser(userData, io, socket);
@@ -164,6 +183,11 @@ io.on("connection", (socket) => {
 
 
     // Device
+
+    socket.on('createDeviceQrCode', async deviceData => {
+        deviceController.createDeviceQrCode(deviceData, io)
+    })
+
     socket.on('createDevice', async (deviceData) => {
         deviceController.createDevice(deviceData, io, socket);
     });
