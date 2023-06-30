@@ -4,10 +4,10 @@ const roomController = require('../controller/room.controller');
 
 const deviceController = {
   getList: async (dataDevice, io, socket) => {
-    const { uid, roomId } = dataDevice;
+    const { homeId, roomId } = dataDevice;
     try {
       const room = await Room.findById(roomId).populate('devicesId');
-      io.to(uid).emit('listDevice', room.devicesId);
+      io.to(homeId).emit('listDevice', room.devicesId);
     } catch (error) {
       console.error(error);
     }
@@ -17,7 +17,7 @@ const deviceController = {
     const { uid, homeId } = dataDevice;
     try {
       const devices = await Device.find({ homeId: homeId, status: true }).lean();
-      io.to(uid).emit("getDeviceRunning", devices);
+      io.to(homeId).emit("getDeviceRunning", devices);
     } catch (error) {
       console.error(error);
     }
@@ -25,6 +25,7 @@ const deviceController = {
 
   createDevice: async (deviceData, io, socket) => {
     const { homeId, roomId, dataDevice, roomName, uid } = deviceData;
+
 
     const devices = dataDevice.map(deviceItem => {
       const { nameDevice, iconName } = deviceItem;
@@ -40,7 +41,7 @@ const deviceController = {
         { new: true }
       ).populate('devicesId');
 
-      await io.to(uid).emit('listDevice', room.devicesId);
+      await io.to(homeId).emit('createDevice', devices);
       await roomController.getList(deviceData, io, socket);
     } catch (error) {
       console.error(error);
@@ -48,10 +49,10 @@ const deviceController = {
   },
 
   updateOnOff: async (dataDevice, io, socket) => {
-    io.emit('update', dataDevice);
 
-    const { idDevice, status, roomId, homeId, uid } = dataDevice;
+    const { idDevice, status, homeId, uid } = dataDevice;
 
+    io.emit('buttonState', status)
     try {
       const device = await Device.findById(idDevice);
 
@@ -60,36 +61,37 @@ const deviceController = {
         countOn++;
       }
 
-      await Device.findByIdAndUpdate(idDevice, { status: status, countOn: countOn });
+      const deviceUpdate = await Device.findByIdAndUpdate(idDevice, { status: status, countOn: countOn });
 
-      const room = await Room.findById(roomId).populate('devicesId');
-      io.to(uid).emit('listDevice', room.devicesId);
+      io.to(homeId).emit('deviceUpdated', { idDevice: deviceUpdate._id, status: status });
 
-      await deviceController.getListDevicesRunning({ uid, homeId }, io, socket);
+      deviceController.getListDevicesRunning(dataDevice, io, socket)
+
     } catch (error) {
       console.error(error);
     }
   },
 
   deleteDevice: async (deviceData, io, socket) => {
-    const { id, homeId, roomId } = deviceData;
+    const { deviceId, homeId, roomId } = deviceData;
     try {
-      await Device.findByIdAndDelete(id);
+      const deletedDevice = await Device.findByIdAndDelete(deviceId);
       await Room.findOneAndUpdate(
         { _id: roomId },
-        { $pull: { devicesId: id } }
+        { $pull: { devicesId: deviceId } }
       );
 
-      await deviceController.getList(deviceData, io, socket);
+      // await deviceController.getList(deviceData, io, socket);
+      // await roomController.getList(deviceData, io, socket);
       await roomController.getList(deviceData, io, socket);
+
+      io.to(homeId).emit('deleteDevice', deletedDevice._id)
     } catch (error) {
       console.error(error);
     }
   },
 
-  getDropDownList: async (dataDevice, io, socket) => {
-    const { uid, homeId } = dataDevice;
-
+  getDropDownList: async (homeId, io, socket) => {
     try {
       const devices = await Device.find({
         $and: [
@@ -118,7 +120,7 @@ const deviceController = {
         });
       });
 
-      io.to(uid).emit('optionsList', options);
+      io.to(homeId).emit('optionsList', options);
     } catch (error) {
       console.error(error);
     }
@@ -141,7 +143,7 @@ const deviceController = {
   },
 
   deleteScheduleOnOff: async (dataDevice, io, socket) => {
-    const { id } = dataDevice;
+    const { idDevice, homeId } = dataDevice;
     const updateData = {
       timeOn: null,
       timeOff: null,
@@ -149,7 +151,7 @@ const deviceController = {
     };
 
     try {
-      await Device.findOneAndUpdate({ _id: id }, updateData, { new: true });
+      await Device.findOneAndUpdate({ _id: idDevice }, updateData, { new: true });
       await deviceController.getListDeviceTime(dataDevice, io, socket);
     } catch (error) {
       console.error('Error updating device:', error);
@@ -171,7 +173,7 @@ const deviceController = {
         .select('_id dayRunning timeOn timeOff nameDevice roomName dayRunningStatus')
         .lean();
 
-      io.to(uid).emit('getListSchedule', devices);
+      io.to(homeId).emit('getListSchedule', devices);
     } catch (error) {
       console.error('Error getting devices:', error);
     }
@@ -182,6 +184,24 @@ const deviceController = {
     try {
       await Device.findOneAndUpdate({ _id: deviceId }, { dayRunningStatus: status });
       await deviceController.getListDeviceTime(dataDevice, io, socket);
+    } catch (error) {
+      console.error(error);
+    }
+  },
+  createDeviceQrCode: async (dataDevice, io, socket) => {
+
+    const { nameDevice, iconName, homeId, roomName, roomId } = dataDevice;
+
+    try {
+      // const user = await User.findOne({ uid: uid }).populate('homeId');
+      const room = await Room.findById(roomId);
+      const device = new Device({ nameDevice, iconName, roomName, roomId, homeId });
+      room.devicesId.push(device._id);
+      await room.save();
+      await device.save();
+      // Gửi thông tin của phòng mới được thêm vào
+      io.to(homeId).emit("createDeviceQR", device);
+      // await roomController.getList(roomData, io, socket);
     } catch (error) {
       console.error(error);
     }
