@@ -59,7 +59,10 @@ const roomController = {
 
     try {
       const deletedRoom = await Room.findById(roomId);
-      await Room.findByIdAndDelete(roomId);
+      // await Room.findByIdAndDelete(roomId);
+      const deletedDevices = await Device.find({ roomId: roomId }).select('_id');
+
+     
       await Device.deleteMany({ roomId: roomId });
       await Home.findOneAndUpdate(
         { roomId: roomId },
@@ -67,8 +70,9 @@ const roomController = {
         { new: true }
       );
 
-      // await roomController.getList(roomData, io, socket);
+      await roomController.getList(roomData, io, socket);
       io.to(homeId).emit('deleteRoom', deletedRoom._id);
+      io.to(homeId).emit('deleteDeviceRunning', deletedDevices )
     } catch (error) {
       console.error(error);
     }

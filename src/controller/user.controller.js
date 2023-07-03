@@ -52,9 +52,11 @@ const userController = {
   //lay 1 user nguyen
   getUser: async (dataUser, io) => {
     const { uid, homeId } = dataUser;
+
+    
     User.findOne({ uid: uid })
       .then((users) => {
-        io.to(homeId).emit('getUser', users);
+        io.to(uid).emit('getUserLogin', users.homeId[0]);
       })
       .catch((err) => {
         console.error(err);
@@ -88,115 +90,76 @@ const userController = {
 
   // Cập nhật user và lưu vào MongoDB
   updateUser: async (userData, io, socket) => {
-    const { uid, imageUser, nameUser, mailUser } = userData
+    const { uid, imageUser, nameUser, mailUser, nameHome, homeId, _id } = userData
     try {
-      const updatedUser = await User.findByIdAndUpdate(uid, { nameUser, imageUser, mailUser }, { new: true });
-      socket.to(uid).emit('users', updatedUser);
+      const updatedUser = await User.findByIdAndUpdate(_id, { nameUser, imageUser, mailUser }, { new: true });
+      const updatedHome = await Home.findByIdAndUpdate(homeId, { nameHome }, { new: true });
+      socket.emit(`updateUser${uid}`, updatedUser);
+      socket.emit(`updateHome${uid}`, updatedHome)
     } catch (error) {
       console.error('Error updating user:', error);
     }
   },
 
-  // Xóa user và xóa khỏi MongoDB
-  deleteUser: async (userId, io) => {
+
+  addHoomToUser: async (data, io) => {
     try {
-      const user = await User.findByIdAndDelete(userId);
-      io.emit('userDeleted', user);
+      const { numberPhone, uid } = data;
+      const user = await User.findOne({ uid });
+      const homeId = user.homeId[0];
+
+      const filter = { phoneUser: numberPhone };
+      const update = { $addToSet: { homeId: homeId } };
+      const options = { new: true };
+
+      const updatedUser = await User.findOneAndUpdate(filter, update, options);
+      if (!updatedUser) {
+        return;
+      }
+
+      const home = await Home.findById(homeId);
+      const { _id, nameHome } = home;
+      const list = {
+        label: nameHome,
+        value: _id,
+      };
+      io.emit(`addDropDownHome${updatedUser.uid}`, list);
     } catch (error) {
       console.error(error);
     }
   },
+  listUserToRoomId: async (data, io) => {
+    const { homeId, uid } = data;
 
-  updateRoom: async (userId, io) => {
-    // Cập nhật trường room của user có _id là userId
-    try {
-      const result = await User.updateOne({ _id: userId }, { $set: { room: "1234" } });
-      console.log('Updated user:', result);
-    } catch (err) {
-      console.log(err);
-    }
+    const users = await User.find({ homeId: homeId });
+
+    const filteredUsers = users.filter(user => user.uid !== uid); // lọc bỏ User có uid giống với uid truyền vào
+
+    io.emit(`listUserToRoomId${uid}`, filteredUsers);
   },
 
-  // loginUser: async (phoneNumber, io) => {
-  //   // console.log(phoneNumber)
-  //   const auth = FirebaseAdmin.auth();
-  //   auth.signInWithPhoneNumber(phoneNumber)
-  //     .then((result) => {
-  //       const token = result._tokenResponse.providerId + ' ' + result._tokenResponse.accessToken;
-  //       socket.emit('login', { token });
-  //     })
-  //     .catch((error) => {
-  //       console.error(error);
-  //       // return res.status(500).send('Error while signing in');
-  //     });
-  //   // try {
-  //   //   // Kiểm tra xem người dùng đã tồn tại trong database hay chưa
-  //   //   let user = await User.findOne({ phoneUser: phoneNumber });
+  deleteUserToRoomId: async (data, io) => {
+    const { id, homeId, uid } = data;
+    const filter = { _id: id };
+    const update = { $pull: { homeId: homeId } };
+    const options = { new: true };
+    const updatedUser = await User.findOneAndUpdate(filter, update, options);
+    const roomIds = updatedUser.homeId;
+    const promises = roomIds.map(async (id) => {
+      try {
+        const room = await Home.findById(id);
+        return { label: room.nameHome, value: room._id };
+      } catch (error) {
+        console.error(error);
+        return null;
+      }
+    });
+    const rooms = await Promise.all(promises);
+    const arrDropDown = rooms.filter((room) => room !== null);
 
-  //   //   // // Tạo một số ngẫu nhiên từ 0 đến 999999
-  //   //   let randomNumber = Math.floor(Math.random() * 1000000);
-
-  //   //   // // Chuyển đổi số thành một chuỗi có 6 chữ số bằng cách thêm các số 0 vào đầu
-  //   //   let formattedNumber = String(randomNumber).padStart(6, '0');
-
-  //   //   if (!user) {
-  //   //     // Nếu người dùng chưa tồn tại, tạo mới một người dùng với số điện thoại và mã OTP mới
-  //   //     const userDataNew = {
-  //   //       nameUser: makeId(10),
-  //   //       phoneUser: phoneNumber,
-  //   //       otp: formattedNumber,
-  //   //     }
-  //   //     const home = new Home({ nameHome: makeId(10) })
-  //   //     await home.save();
-
-  //   //     user = new User(userDataNew);
-  //   //     user.homeId.push(home._id)
-
-  //   //     await user.save();
-  //   //   } else {
-  //   //     // Nếu người dùng đã tồn tại, cập nhật mã OTP mới
-  //   //     user.otp = formattedNumber;
-  //   //     await user.save();
-  //   //   }
-
-  //   //   // Gửi mã OTP qua SMS
-  //   //   await client.messages.create({
-  //   //     body: `Your OTP is ${formattedNumber}`,
-  //   //     from: fromNumber,
-  //   //     to: phoneNumber
-  //   //   });
-
-  //   //   // Gửi thông báo đến client rằng mã OTP đã được gửi
-  //   //   io.emit('otpSent', 'success');
-  //   // } catch (error) {
-  //   //   console.log(error);
-  //   //   //   res.status(500).send({ error: 'Có lỗi xảy ra khi gửi mã OTP' });
-  //   // }
-  // },
-
-  // verifi: async (data, io) => {
-  //   const { phoneUser, verificationId, verificationCode } = data;
-
-  //   const admin = require('firebase-admin');
-  //   const serviceAccount = require('../firebaseAccountKey/serviceAccountKey.json');
-  //   admin.initializeApp({
-  //     credential: admin.credential.cert(serviceAccount),
-  //     databaseURL: "https://smarthomereactnative-default-rtdb.firebaseio.com",
-  //   });
-
-  //   // Sử dụng Firebase Admin SDK để xác thực số điện thoại của người dùng
-  //   const credential = admin.auth.signInWithEmailAndPassword("adsf", "asdf")
-  //   console.log(credential)
-  //   // await admin.auth().signInWithCredential(credential)
-  //   //   .then((userCredential) => {
-  //   //     // Nếu xác thực thành công, trả về mã thông báo đại diện cho người dùng đó
-  //   //     const token = userCredential.user.uid;
-  //   //     console.log(token)
-  //   //   })
-  //   //   .catch((error) => {
-  //   //     console.error(error);
-  //   //   });
-  // }
+    io.emit(`updateDropDownHome${updatedUser.uid}`, arrDropDown)
+    userController.listUserToRoomId(data, io)
+  }
 }
 
 module.exports = userController;

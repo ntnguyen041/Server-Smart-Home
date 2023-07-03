@@ -34,74 +34,74 @@ const io = new Server(server, {
 
 io.on("connection", (socket) => {
 
-    socket.on('getData', async uid => {
-        try {
-            const user = await User.findOne({ uid: uid }).populate({
-                path: 'homeId',
-                populate: {
-                    path: 'roomId',
-                    populate: {
-                        path: 'devicesId'
-                    }
-                }
-            });
+    // socket.on('getData', async uid => {
+    //     try {
+    //         const user = await User.findOne({ uid: uid }).populate({
+    //             path: 'homeId',
+    //             populate: {
+    //                 path: 'roomId',
+    //                 populate: {
+    //                     path: 'devicesId'
+    //                 }
+    //             }
+    //         });
 
-            //   // Lấy tất cả các thiết bị và chỉ lấy các thiết bị có trạng thái là true
-            //   const allDevicesRunning = user.homeId.reduce((acc, home) => {
-            //     const rooms = home.roomId.map(room => room.devicesId);
-            //     const devices = rooms.flat().filter(device => device.status === true);
-            //     return [...acc, ...devices];
-            //   }, []);
+    //         //   // Lấy tất cả các thiết bị và chỉ lấy các thiết bị có trạng thái là true
+    //         //   const allDevicesRunning = user.homeId.reduce((acc, home) => {
+    //         //     const rooms = home.roomId.map(room => room.devicesId);
+    //         //     const devices = rooms.flat().filter(device => device.status === true);
+    //         //     return [...acc, ...devices];
+    //         //   }, []);
 
-            //   // Chia dữ liệu thành các đối tượng cần thiết
-            //   const data = user.homeId.reduce((acc, home) => {
-            //     const rooms = home.roomId.map(room => {
-            //       const devices = room.devicesId.filter(device => device.status === true);
-            //       return {
-            //         id: room.id,
-            //         name: room.nameRoom,
-            //         devices: devices.map(device => ({
-            //           id: device.id,
-            //           name: device.nameDevice,
-            //           status: device.status
-            //         }))
-            //       };
-            //     });
-            //     acc.homes.push({
-            //       id: home.id,
-            //       name: home.nameHome,
-            //       rooms: rooms
-            //     });
-            //     return acc;
-            //   }, {
-            //     user: {
-            //       id: user.id,
-            //       name: user.nameUser,
-            //       phone: user.phoneUser,
-            //       image: user.imageUser,
-            //       mail: user.mailUser
-            //     },
-            //     homes: []
-            //   });
+    //         //   // Chia dữ liệu thành các đối tượng cần thiết
+    //         //   const data = user.homeId.reduce((acc, home) => {
+    //         //     const rooms = home.roomId.map(room => {
+    //         //       const devices = room.devicesId.filter(device => device.status === true);
+    //         //       return {
+    //         //         id: room.id,
+    //         //         name: room.nameRoom,
+    //         //         devices: devices.map(device => ({
+    //         //           id: device.id,
+    //         //           name: device.nameDevice,
+    //         //           status: device.status
+    //         //         }))
+    //         //       };
+    //         //     });
+    //         //     acc.homes.push({
+    //         //       id: home.id,
+    //         //       name: home.nameHome,
+    //         //       rooms: rooms
+    //         //     });
+    //         //     return acc;
+    //         //   }, {
+    //         //     user: {
+    //         //       id: user.id,
+    //         //       name: user.nameUser,
+    //         //       phone: user.phoneUser,
+    //         //       image: user.imageUser,
+    //         //       mail: user.mailUser
+    //         //     },
+    //         //     homes: []
+    //         //   });
 
-            //   // Thêm tất cả các thiết bị và chỉ lấy các thiết bị có trạng thái là true vào đối tượng data
-            //   data.allDevicesRunning = allDevicesRunning.map(device => ({
-            //     _id: device.id,
-            //     nameDevice: device.nameDevice,
-            //     status: device.status
-            //   })).filter(device => device.status === true);
+    //         //   // Thêm tất cả các thiết bị và chỉ lấy các thiết bị có trạng thái là true vào đối tượng data
+    //         //   data.allDevicesRunning = allDevicesRunning.map(device => ({
+    //         //     _id: device.id,
+    //         //     nameDevice: device.nameDevice,
+    //         //     status: device.status
+    //         //   })).filter(device => device.status === true);
 
 
-            const devices = user.homeId[0].roomId.flatMap(room => (
-                room.devicesId.filter(device => device.status)
-            ));
+    //         const devices = user.homeId[0].roomId.flatMap(room => (
+    //             room.devicesId.filter(device => device.status)
+    //         ));
 
-            io.to(uid).emit('devicesRunning', devices);
-            io.to(uid).emit('rooms', user.homeId[0].roomId)
-        } catch (error) {
-            console.error(error);
-        }
-    });
+    //         io.to(uid).emit('devicesRunning', devices);
+    //         io.to(uid).emit('rooms', user.homeId[0].roomId)
+    //     } catch (error) {
+    //         console.error(error);
+    //     }
+    // });
 
     console.log(`User connect: ${socket.id}`);
 
@@ -119,7 +119,20 @@ io.on("connection", (socket) => {
     })
     socket.on('joinRoom', token => {
         socket.join(token);
-        socket.emit('checkJoinRoom', { status: true, homeId: token })
+        const room = io.sockets.adapter.rooms.get(token);
+        if (room) {
+            const clients = [...room.values()];
+            socket.to(token).emit('socketJoinId', clients[0])
+        } else {
+            console.log("Phòng không tồn tại.");
+        }
+    })
+    socket.on('joinRoomSelect', token => {
+        socket.join(token.homeId);
+        const socketToRemove = io.sockets.sockets.get(socket.id);
+        if (socketToRemove) {
+            socketToRemove.leave(token.roomIdPrev);
+        }
     })
 
     function getRandomArbitrary(min, max) {
@@ -129,6 +142,7 @@ io.on("connection", (socket) => {
 
     setInterval(function () {
         socket.emit('randomNumber', { temperature: getRandomArbitrary(10, 25), inDoor: getRandomArbitrary(25, 35), outDoor: getRandomArbitrary(25, 35) })
+
     }, 2000);
 
    
@@ -144,6 +158,9 @@ io.on("connection", (socket) => {
     socket.on('getAllUser', async (data) => {
         userController.getlistUser(data, io);
     });
+    socket.on('getUserLogin', async (uid) => {
+        userController.getUserLogin(uid, io, socket);
+    });
     socket.on('getUser', async (uid) => {
         userController.getUser(uid, io, socket);
     });
@@ -158,6 +175,16 @@ io.on("connection", (socket) => {
     socket.on('deleteUser', async (userId) => {
         userController.deleteUser(userId, io, socket);
     });
+
+    socket.on('addHoomToUser', async (data) => {
+        userController.addHoomToUser(data, io);
+    })
+    socket.on('listUserToRoomId', async (data) => {
+        userController.listUserToRoomId(data, io);
+    })
+    socket.on('deleteUserToRoomId', async (data) => {
+        userController.deleteUserToRoomId(data, io)
+    })
 
     //Room
     socket.on('getRoomLists', async (homeId) => {
@@ -233,8 +260,11 @@ io.on("connection", (socket) => {
     socket.on('createHome', async (homeData) => {
         homeController.createHome(homeData, io, socket);
     });
-    socket.on("getitemhome",async(data)=>{
+    socket.on("getitemhome", async (data) => {
         homeController.getList(data, io, socket)
+    })
+    socket.on('dropDownRoom', (dataRoom) => {
+        homeController.getDropDownRoom(dataRoom, io)
     })
 
 });
