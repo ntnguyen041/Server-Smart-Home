@@ -1,8 +1,19 @@
 const Device = require('../model/device.model');
 const Room = require('../model/room.model');
 const roomController = require('../controller/room.controller');
+const User = require('../model/user.model');
 
 const deviceController = {
+  // nguyen
+  getLists: async (data, io, socket) => {
+    const{_id,roomId}=data;
+    try {
+       const room = await Room.findById(roomId).populate('devicesId');
+       io.to(data._id).emit('listDevices', room.devicesId);
+    } catch (error) {
+      console.error(error);
+    }
+  },
   getList: async (dataDevice, io, socket) => {
     const { homeId, roomId } = dataDevice;
     try {

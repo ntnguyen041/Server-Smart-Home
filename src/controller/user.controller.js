@@ -24,23 +24,34 @@ function makeId(length) {
   }
   return result;
 }
-
+// nguyen
 const userController = {
   login: async (phoneNumber, io) => {
     User.findOne({ phoneUser: phoneNumber })
       .then((users) => {
-        io.to(phoneNumber).emit('loginAD', users);
+        io.emit('loginAD', users);
         console.log(users)
       })
       .catch((err) => {
         console.error(err);
       });
   },
-  //lay 1 user
+  /// trong 1 nha //nguyen
+  getlistUser: async (data, io) => {
+    const { uid, homeId } = data;
+    User.find({homeId:homeId})
+    .then((users) => {
+      if(users!=null){
+        io.emit('listUserView',users);
+      }
+    })
+    .catch((err) => {
+      console.error(err);
+    });
+  },
+  //lay 1 user nguyen
   getUser: async (dataUser, io) => {
     const { uid, homeId } = dataUser;
-
-    
     User.findOne({ uid: uid })
       .then((users) => {
         io.to(homeId).emit('getUser', users);

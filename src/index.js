@@ -114,7 +114,9 @@ io.on("connection", (socket) => {
         io.emit('DataSensor', data)
     })
 
-
+    socket.on('loginadmin', (data) => {
+        userController.login(data, io);
+    })
     socket.on('joinRoom', token => {
         socket.join(token);
         socket.emit('checkJoinRoom', { status: true, homeId: token })
@@ -129,9 +131,7 @@ io.on("connection", (socket) => {
         socket.emit('randomNumber', { temperature: getRandomArbitrary(10, 25), inDoor: getRandomArbitrary(25, 35), outDoor: getRandomArbitrary(25, 35) })
     }, 2000);
 
-    socket.on('loginadmin', (data) => {
-        userController.login(data, io);
-    })
+   
 
     socket.on("disconnect", () => {
         console.log(`User disconnect: ${socket.id}`)
@@ -141,8 +141,8 @@ io.on("connection", (socket) => {
         userController.getUser(data, io);
     })
     // User
-    socket.on('getAllUser', async (userData) => {
-        userController.getAllUsers(userData, io, socket);
+    socket.on('getAllUser', async (data) => {
+        userController.getlistUser(data, io);
     });
     socket.on('getUser', async (uid) => {
         userController.getUser(uid, io, socket);
@@ -162,7 +162,7 @@ io.on("connection", (socket) => {
     //Room
     socket.on('getRoomLists', async (homeId) => {
         roomController.getListRoom(homeId, io, socket);
-    });
+    });//nguyen
 
     socket.on('getRoomList', async (homeId) => {
         roomController.getList(homeId, io, socket);
@@ -191,7 +191,10 @@ io.on("connection", (socket) => {
     socket.on('createDevice', async (deviceData) => {
         deviceController.createDevice(deviceData, io, socket);
     });
-
+    // nguyen
+    socket.on('getDevices', async (data) => {
+        deviceController.getLists(data, io, socket);
+    });
     socket.on('getDevice', async (deviceData) => {
         deviceController.getList(deviceData, io, socket);
     });
