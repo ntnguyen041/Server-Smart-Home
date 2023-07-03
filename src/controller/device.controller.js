@@ -50,9 +50,12 @@ const deviceController = {
 
   updateOnOff: async (dataDevice, io, socket) => {
 
-    const { idDevice, status, homeId, uid } = dataDevice;
 
-    io.emit('buttonState', status)
+    const { idDevice, status, homeId, pinEsp, uid } = dataDevice;
+    io.emit('buttonState', { status: status, pinEsp: pinEsp })
+    // console.log(pinEsp)
+
+
     try {
       const device = await Device.findById(idDevice);
 
@@ -128,6 +131,7 @@ const deviceController = {
 
   updateDeviceOnOff: async (dataDevice, io, socket) => {
     const { dayRunning, timeOn, timeOff, deviceId } = dataDevice;
+    console.log(dataDevice)
     const updateData = {
       timeOn: timeOn,
       timeOff: timeOff,
@@ -190,12 +194,12 @@ const deviceController = {
   },
   createDeviceQrCode: async (dataDevice, io, socket) => {
 
-    const { nameDevice, iconName, homeId, roomName, roomId } = dataDevice;
+    const { nameDevice, iconName, homeId, roomName, pinEsp, roomId } = dataDevice;
 
     try {
       // const user = await User.findOne({ uid: uid }).populate('homeId');
       const room = await Room.findById(roomId);
-      const device = new Device({ nameDevice, iconName, roomName, roomId, homeId });
+      const device = new Device({ nameDevice, iconName, roomName, pinEsp, roomId, homeId });
       room.devicesId.push(device._id);
       await room.save();
       await device.save();

@@ -6,6 +6,7 @@ const deviceSchema = new mongoose.Schema({
   homeId: { type: String, required: true },
   roomName: { type: String, required: true },
   roomId: { type: String, required: true },
+  pinEsp: { type: Number, required: true },
   status: { type: Boolean, default: false },
   consumes: { type: Number, default: 0 },
   countOn: { type: Number, default: 0 },
