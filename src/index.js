@@ -26,7 +26,7 @@ mongoose.connect(process.env.URL_MONGO, {
 // `http://localhost:3000`, 
 const io = new Server(server, {
     cors: {
-        origin: [`http://localhost:3000`],
+        origin: [`https://smarthome-ckc.onrender.com`],
         methods: ["GET", "POST"],
     },
 });
@@ -151,9 +151,9 @@ io.on("connection", (socket) => {
         console.log(`User disconnect: ${socket.id}`)
     });
 
-    socket.on("getOneUser", async (data) => {
-        userController.getUser(data, io);
-    })
+    // socket.on("getOneUser", async (data) => {
+    //     userController.getUser(data, io);
+    // })
     // User
     socket.on('getAllUser', async (data) => {
         userController.getlistUser(data, io);
@@ -222,6 +222,11 @@ io.on("connection", (socket) => {
     socket.on('getDevices', async (data) => {
         deviceController.getLists(data, io, socket);
     });
+    // nguyen
+    socket.on('getDevicesToHome', async (data) => {
+        deviceController.getListforHome(data, io, socket);
+    });
+
     socket.on('getDevice', async (deviceData) => {
         deviceController.getList(deviceData, io, socket);
     });
@@ -257,6 +262,9 @@ io.on("connection", (socket) => {
     })
 
     // Home
+    socket.on('getHomeUser', async (data) => {
+       homeController.getListshome(data, io, socket);
+    });// nguyen
     socket.on('createHome', async (homeData) => {
         homeController.createHome(homeData, io, socket);
     });

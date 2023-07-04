@@ -30,7 +30,6 @@ const userController = {
     User.findOne({ phoneUser: phoneNumber })
       .then((users) => {
         io.emit('loginAD', users);
-        console.log(users)
       })
       .catch((err) => {
         console.error(err);
@@ -52,8 +51,6 @@ const userController = {
   //lay 1 user nguyen
   getUser: async (dataUser, io) => {
     const { uid, homeId } = dataUser;
-
-    
     User.findOne({ uid: uid })
       .then((users) => {
         io.to(uid).emit('getUserLogin', users.homeId[0]);
