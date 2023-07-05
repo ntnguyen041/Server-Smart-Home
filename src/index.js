@@ -26,7 +26,7 @@ mongoose.connect(process.env.URL_MONGO, {
 // `http://localhost:3000`, 
 const io = new Server(server, {
     cors: {
-        origin: [`http://localhost:3000`],
+        origin: [`https://smarthome-ckc.onrender.com`],
         methods: ["GET", "POST"],
     },
 });
@@ -42,7 +42,9 @@ io.on("connection", (socket) => {
         io.emit('DataSensor', data)
     })
 
-
+    socket.on('loginadmin', (data) => {
+        userController.login(data, io);
+    })
     socket.on('joinRoom', token => {
         socket.join(token);
         const room = io.sockets.adapter.rooms.get(token);
@@ -71,20 +73,18 @@ io.on("connection", (socket) => {
 
     }, 2000);
 
-    socket.on('loginadmin', (data) => {
-        userController.login(data, io);
-    })
+   
 
     socket.on("disconnect", () => {
         console.log(`User disconnect: ${socket.id}`)
     });
 
-    socket.on("getOneUser", async (data) => {
-        userController.getUser(data, io);
-    })
+    // socket.on("getOneUser", async (data) => {
+    //     userController.getUser(data, io);
+    // })
     // User
-    socket.on('getAllUser', async (userData) => {
-        userController.getAllUsers(userData, io, socket);
+    socket.on('getAllUser', async (data) => {
+        userController.getlistUser(data, io);
     });
     socket.on('getUserLogin', async (uid) => {
         userController.getUserLogin(uid, io, socket);
@@ -117,7 +117,7 @@ io.on("connection", (socket) => {
     //Room
     socket.on('getRoomLists', async (homeId) => {
         roomController.getListRoom(homeId, io, socket);
-    });
+    });//nguyen
 
     socket.on('getRoomList', async (dataRoom) => {
         roomController.getList(dataRoom, io, socket);
@@ -145,6 +145,14 @@ io.on("connection", (socket) => {
 
     socket.on('createDevice', async (deviceData) => {
         deviceController.createDevice(deviceData, io, socket);
+    });
+    // nguyen
+    socket.on('getDevices', async (data) => {
+        deviceController.getLists(data, io, socket);
+    });
+    // nguyen
+    socket.on('getDevicesToHome', async (data) => {
+        deviceController.getListforHome(data, io, socket);
     });
 
     socket.on('getDevice', async (deviceData) => {
@@ -182,6 +190,9 @@ io.on("connection", (socket) => {
     })
 
     // Home
+    socket.on('getHomeUser', async (data) => {
+       homeController.getListshome(data, io, socket);
+    });// nguyen
     socket.on('createHome', async (homeData) => {
         homeController.createHome(homeData, io, socket);
     });

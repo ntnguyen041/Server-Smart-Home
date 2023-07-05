@@ -2,6 +2,15 @@ const Home = require('../model/home.model');
 const User = require('../model/user.model');
 
 const homeController = {
+    getListshome: async (data, io, socket) => {
+        const {_id,homeId}=data;
+        try {
+            const homes = await Home.find({_id:homeId});
+            io.to(_id).emit("listHomeUser", homes)
+        } catch (error) {
+            console.log(error);
+        }
+    },// nguyen
     getList: async (homeId, io, socket) => {
         try {
             const homes = await Home.findById(homeId).populate('roomId');

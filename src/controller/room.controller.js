@@ -57,8 +57,6 @@ const roomController = {
 
       await roomController.getList(roomData, io, socket);
       io.to(homeId).emit('deleteRoom', deletedRoom._id);
-      // io.to(homeId).emit('deleteDeviceRunning', deletedDevices )
-      // deviceController.getListDevicesRunning(roomData, io)
 
       const devices = await Device.find({ homeId: homeId, status: true }).lean();
       io.to(homeId).emit("getDeviceRunning", devices);

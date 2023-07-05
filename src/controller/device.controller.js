@@ -4,6 +4,25 @@ const Room = require('../model/room.model');
 const roomController = require("./room.controller");
 
 const deviceController = {
+  // nguyen
+  getLists: async (data, io, socket) => {
+    const{_id,roomId}=data;
+    try {
+       const room = await Room.findById(roomId).populate('devicesId');
+       io.to(data._id).emit('listDevices', room);
+    } catch (error) {
+      console.error(error);
+    }
+  },
+  getListforHome: async (data, io, socket) => {
+    const{_id,homeId}=data;
+    try {
+      const device = await Device.find({ homeId: homeId}).lean();
+       io.to(data._id).emit('getListforHome', device);
+    } catch (error) {
+      console.error(error);
+    }
+  },
   getList: async (dataDevice, io, socket) => {
     const { homeId, roomId } = dataDevice;
     try {
