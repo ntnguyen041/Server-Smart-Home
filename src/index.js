@@ -7,9 +7,9 @@ const userController = require('./controller/user.controller')
 const roomController = require('./controller/room.controller')
 const deviceController = require('./controller/device.controller')
 const homeController = require('./controller/home.controller')
-require('dotenv').config();
-const User = require('./model/user.model')
+const Device = require('./model/device.model')
 
+require('dotenv').config();
 const app = express();
 var port = process.env.PORT || 3001;
 
@@ -34,81 +34,9 @@ const io = new Server(server, {
 
 io.on("connection", (socket) => {
 
-    // socket.on('getData', async uid => {
-    //     try {
-    //         const user = await User.findOne({ uid: uid }).populate({
-    //             path: 'homeId',
-    //             populate: {
-    //                 path: 'roomId',
-    //                 populate: {
-    //                     path: 'devicesId'
-    //                 }
-    //             }
-    //         });
-
-    //         //   // Lấy tất cả các thiết bị và chỉ lấy các thiết bị có trạng thái là true
-    //         //   const allDevicesRunning = user.homeId.reduce((acc, home) => {
-    //         //     const rooms = home.roomId.map(room => room.devicesId);
-    //         //     const devices = rooms.flat().filter(device => device.status === true);
-    //         //     return [...acc, ...devices];
-    //         //   }, []);
-
-    //         //   // Chia dữ liệu thành các đối tượng cần thiết
-    //         //   const data = user.homeId.reduce((acc, home) => {
-    //         //     const rooms = home.roomId.map(room => {
-    //         //       const devices = room.devicesId.filter(device => device.status === true);
-    //         //       return {
-    //         //         id: room.id,
-    //         //         name: room.nameRoom,
-    //         //         devices: devices.map(device => ({
-    //         //           id: device.id,
-    //         //           name: device.nameDevice,
-    //         //           status: device.status
-    //         //         }))
-    //         //       };
-    //         //     });
-    //         //     acc.homes.push({
-    //         //       id: home.id,
-    //         //       name: home.nameHome,
-    //         //       rooms: rooms
-    //         //     });
-    //         //     return acc;
-    //         //   }, {
-    //         //     user: {
-    //         //       id: user.id,
-    //         //       name: user.nameUser,
-    //         //       phone: user.phoneUser,
-    //         //       image: user.imageUser,
-    //         //       mail: user.mailUser
-    //         //     },
-    //         //     homes: []
-    //         //   });
-
-    //         //   // Thêm tất cả các thiết bị và chỉ lấy các thiết bị có trạng thái là true vào đối tượng data
-    //         //   data.allDevicesRunning = allDevicesRunning.map(device => ({
-    //         //     _id: device.id,
-    //         //     nameDevice: device.nameDevice,
-    //         //     status: device.status
-    //         //   })).filter(device => device.status === true);
-
-
-    //         const devices = user.homeId[0].roomId.flatMap(room => (
-    //             room.devicesId.filter(device => device.status)
-    //         ));
-
-    //         io.to(uid).emit('devicesRunning', devices);
-    //         io.to(uid).emit('rooms', user.homeId[0].roomId)
-    //     } catch (error) {
-    //         console.error(error);
-    //     }
-    // });
-
     console.log(`User connect: ${socket.id}`);
 
 
-    socket.on('buttonState', data => {
-        console.log(data)
-    })
 
     socket.on('DataSensor', data => {
         io.emit('DataSensor', data)
@@ -191,8 +119,8 @@ io.on("connection", (socket) => {
         roomController.getListRoom(homeId, io, socket);
     });
 
-    socket.on('getRoomList', async (homeId) => {
-        roomController.getList(homeId, io, socket);
+    socket.on('getRoomList', async (dataRoom) => {
+        roomController.getList(dataRoom, io, socket);
     });
 
     socket.on('createRoom', async (roomData) => {
@@ -262,6 +190,18 @@ io.on("connection", (socket) => {
     })
     socket.on('dropDownRoom', (dataRoom) => {
         homeController.getDropDownRoom(dataRoom, io)
+    })
+
+    //
+
+    socket.on('buttonState', async data => {
+        const { homeId, pinEsp, status } = data;
+
+       
+        const deviceUpdate = await Device.findOneAndUpdate({ pinEsp: pinEsp }, { status: status })
+
+        socket.to(homeId).emit('deviceUpdated', { idDevice: deviceUpdate._id, status: status });
+
     })
 
 });

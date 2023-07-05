@@ -43,7 +43,7 @@ const homeController = {
             const rooms = await Promise.all(promises);
             const arrDropDown = rooms.filter((room) => room !== null);
 
-            io.to(homeId).emit('dropDownRoom', arrDropDown);
+            io.emit(`dropDownRoom${uid}`, arrDropDown);
         } catch (error) {
             console.error(error);
         }
