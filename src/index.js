@@ -10,6 +10,8 @@ const homeController = require('./controller/home.controller')
 const Device = require('./model/device.model')
 
 require('dotenv').config();
+const User = require('./model/user.model')
+
 const app = express();
 var port = process.env.PORT || 3001;
 
@@ -26,7 +28,7 @@ mongoose.connect(process.env.URL_MONGO, {
 // `http://localhost:3000`, 
 const io = new Server(server, {
     cors: {
-        origin: [`https://smarthome-ckc.onrender.com`],
+        origin: [`http://localhost:3000`],
         methods: ["GET", "POST"],
     },
 });
@@ -44,7 +46,7 @@ io.on("connection", (socket) => {
 
     socket.on('loginadmin', (data) => {
         userController.login(data, io);
-    })
+    })// nguyen
     socket.on('joinRoom', token => {
         socket.join(token);
         const room = io.sockets.adapter.rooms.get(token);
@@ -201,18 +203,6 @@ io.on("connection", (socket) => {
     })
     socket.on('dropDownRoom', (dataRoom) => {
         homeController.getDropDownRoom(dataRoom, io)
-    })
-
-    //
-
-    socket.on('buttonState', async data => {
-        const { homeId, pinEsp, status } = data;
-
-       
-        const deviceUpdate = await Device.findOneAndUpdate({ pinEsp: pinEsp }, { status: status })
-
-        socket.to(homeId).emit('deviceUpdated', { idDevice: deviceUpdate._id, status: status });
-
     })
 
 });
