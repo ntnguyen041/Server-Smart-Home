@@ -48,12 +48,12 @@ const userController = {
       console.error(err);
     });
   },
-  //lay 1 user nguyen
+
   getUser: async (dataUser, io) => {
     const { uid, homeId } = dataUser;
     User.findOne({ uid: uid })
       .then((users) => {
-        io.to(uid).emit('getUserLogin', users.homeId[0]);
+        io.emit(`getUser${uid}`, users);
       })
       .catch((err) => {
         console.error(err);

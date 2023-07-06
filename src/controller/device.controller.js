@@ -1,7 +1,7 @@
 const Device = require('../model/device.model');
 const Room = require('../model/room.model');
-const roomController = require('../controller/room.controller');
-const User = require('../model/user.model');
+// const roomController = require('../controller/room.controller');
+const roomController = require("./room.controller");
 
 const deviceController = {
   // nguyen
@@ -69,11 +69,8 @@ const deviceController = {
   },
 
   updateOnOff: async (dataDevice, io, socket) => {
-
-
     const { idDevice, status, homeId, pinEsp, uid } = dataDevice;
     io.emit('buttonState', { status: status, pinEsp: pinEsp })
-    // console.log(pinEsp)
 
 
     try {
@@ -106,9 +103,11 @@ const deviceController = {
 
       // await deviceController.getList(deviceData, io, socket);
       // await roomController.getList(deviceData, io, socket);
-      await roomController.getList(deviceData, io, socket);
 
       io.to(homeId).emit('deleteDevice', deletedDevice._id)
+      await deviceController.getListDevicesRunning(deviceData, io, socket);
+      await roomController.getList(deviceData, io, socket);
+      await deviceController.getListDeviceTime(deviceData, io, socket)
     } catch (error) {
       console.error(error);
     }
@@ -151,7 +150,6 @@ const deviceController = {
 
   updateDeviceOnOff: async (dataDevice, io, socket) => {
     const { dayRunning, timeOn, timeOff, deviceId } = dataDevice;
-    console.log(dataDevice)
     const updateData = {
       timeOn: timeOn,
       timeOff: timeOff,
@@ -215,8 +213,15 @@ const deviceController = {
   createDeviceQrCode: async (dataDevice, io, socket) => {
 
     const { nameDevice, iconName, homeId, roomName, pinEsp, roomId } = dataDevice;
-
+  
     try {
+      // Check if a device with the same homeId and pinEsp already exists
+      const existingDevice = await Device.findOne({ homeId, pinEsp });
+      if (existingDevice) {
+        console.log(`A device with homeId ${homeId} and pinEsp ${pinEsp} already exists`);
+        return; // Exit function early without creating a new device
+      }
+      
       // const user = await User.findOne({ uid: uid }).populate('homeId');
       const room = await Room.findById(roomId);
       const device = new Device({ nameDevice, iconName, roomName, pinEsp, roomId, homeId });
@@ -225,7 +230,7 @@ const deviceController = {
       await device.save();
       // Gửi thông tin của phòng mới được thêm vào
       io.to(homeId).emit("createDeviceQR", device);
-      // await roomController.getList(roomData, io, socket);
+      await roomController.getList(dataDevice, io, socket);
     } catch (error) {
       console.error(error);
     }
