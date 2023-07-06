@@ -8,7 +8,8 @@ const roomController = require('./controller/room.controller')
 const deviceController = require('./controller/device.controller')
 const homeController = require('./controller/home.controller')
 require('dotenv').config();
-const User = require('./model/user.model')
+const User = require('./model/user.model');
+const QRcontroller = require("./controller/qrdevice.controller");
 
 const app = express();
 var port = process.env.PORT || 3001;
@@ -26,7 +27,7 @@ mongoose.connect(process.env.URL_MONGO, {
 // `http://localhost:3000`, 
 const io = new Server(server, {
     cors: {
-        origin: [`https://smarthome-ckc.onrender.com`],
+        origin: [`http://localhost:3000`],
         methods: ["GET", "POST"],
     },
 });
@@ -116,7 +117,7 @@ io.on("connection", (socket) => {
 
     socket.on('loginadmin', (data) => {
         userController.login(data, io);
-    })
+    })// nguyen
     socket.on('joinRoom', token => {
         socket.join(token);
         const room = io.sockets.adapter.rooms.get(token);
@@ -274,7 +275,11 @@ io.on("connection", (socket) => {
     socket.on('dropDownRoom', (dataRoom) => {
         homeController.getDropDownRoom(dataRoom, io)
     })
-
+    // pinEsp nguyen
+    socket.on("createPin",async(data)=>{
+        console.log(data)
+        QRcontroller.createPinEsp(data,io,socket)
+    })
 });
 
 server.listen(port, () => {
