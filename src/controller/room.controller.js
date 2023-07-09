@@ -7,7 +7,7 @@ const Device = require('../model/device.model');
 const roomController = {
   getList: async (data, io, socket) => {
     try {
-      const { homeId, uid } = data;
+      const { homeId } = data;
       const home = await Home.findById(homeId).populate('roomId');
       io.to(homeId).emit("listRoom", home.roomId);
     } catch (error) {
@@ -63,6 +63,18 @@ const roomController = {
 
     } catch (error) {
       console.error(error);
+    }
+  },
+  updateRoom: async (roomData, io, socket) => {
+
+    try {
+      const { idRoom, imageRoom, nameRoom, homeId } = roomData;
+      await Room.findByIdAndUpdate(idRoom, { imageRoom: imageRoom, nameRoom: nameRoom });
+
+      roomController.getList(roomData, io, socket);
+
+    } catch (error) {
+      console.log(error);
     }
   }
 };

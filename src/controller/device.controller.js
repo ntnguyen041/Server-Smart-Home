@@ -2,23 +2,25 @@ const Device = require('../model/device.model');
 const Room = require('../model/room.model');
 // const roomController = require('../controller/room.controller');
 const roomController = require("./room.controller");
+const moment = require('moment')
+
 
 const deviceController = {
   // nguyen
   getLists: async (data, io, socket) => {
-    const{_id,roomId}=data;
+    const { _id, roomId } = data;
     try {
-       const room = await Room.findById(roomId).populate('devicesId');
-       io.to(data._id).emit('listDevices', room);
+      const room = await Room.findById(roomId).populate('devicesId');
+      io.to(data._id).emit('listDevices', room);
     } catch (error) {
       console.error(error);
     }
   },
   getListforHome: async (data, io, socket) => {
-    const{_id,homeId}=data;
+    const { _id, homeId } = data;
     try {
-      const device = await Device.find({ homeId: homeId}).lean();
-       io.to(data._id).emit('getListforHome', device);
+      const device = await Device.find({ homeId: homeId }).lean();
+      io.to(data._id).emit('getListforHome', device);
     } catch (error) {
       console.error(error);
     }
@@ -34,7 +36,7 @@ const deviceController = {
   },
 
   getListDevicesRunning: async (dataDevice, io, socket) => {
-    const { uid, homeId } = dataDevice;
+    const { homeId } = dataDevice;
     try {
       const devices = await Device.find({ homeId: homeId, status: true }).lean();
       io.to(homeId).emit("getDeviceRunning", devices);
@@ -72,7 +74,6 @@ const deviceController = {
     const { idDevice, status, homeId, pinEsp, uid } = dataDevice;
     io.emit('buttonState', { status: status, pinEsp: pinEsp })
 
-
     try {
       const device = await Device.findById(idDevice);
 
@@ -81,11 +82,13 @@ const deviceController = {
         countOn++;
       }
 
-      const deviceUpdate = await Device.findByIdAndUpdate(idDevice, { status: status, countOn: countOn });
+      const deviceUpdate = await Device.findByIdAndUpdate(idDevice, { status: status, countOn: countOn, dayRunningStatus: false });
 
       io.to(homeId).emit('deviceUpdated', { idDevice: deviceUpdate._id, status: status });
 
       deviceController.getListDevicesRunning(dataDevice, io, socket)
+      deviceController.getListDeviceTime(dataDevice, io, socket);
+      deviceController.reportDataDevice(dataDevice, io, socket);
 
     } catch (error) {
       console.error(error);
@@ -123,7 +126,8 @@ const deviceController = {
       })
         .populate('roomId', 'nameRoom homeId')
         .select('nameDevice roomName iconName roomId status')
-        .lean();
+        .lean()
+        .sort({ roomId: 1 });
 
       // Chuyển đổi dữ liệu để tạo ra mảng options
       const options = [];
@@ -132,7 +136,7 @@ const deviceController = {
       devices.forEach(device => {
         const parent = device.roomName || null;
         if (parent !== prevParent) {
-          options.unshift({ label: parent, value: parent });
+          options.push({ label: parent, value: parent });
           prevParent = parent;
         }
         options.push({
@@ -153,7 +157,8 @@ const deviceController = {
     const updateData = {
       timeOn: timeOn,
       timeOff: timeOff,
-      dayRunning: dayRunning
+      dayRunning: dayRunning,
+      dayRunningStatus: true
     };
 
     try {
@@ -212,16 +217,17 @@ const deviceController = {
   },
   createDeviceQrCode: async (dataDevice, io, socket) => {
 
-    const { nameDevice, iconName, homeId, roomName, pinEsp, roomId } = dataDevice;
-  
+    const { nameDevice, iconName, homeId, roomName, pinEsp, roomId, uid } = dataDevice;
+
     try {
       // Check if a device with the same homeId and pinEsp already exists
       const existingDevice = await Device.findOne({ homeId, pinEsp });
       if (existingDevice) {
         console.log(`A device with homeId ${homeId} and pinEsp ${pinEsp} already exists`);
+        io.emit(`qrScanFailed${uid}`, `This device is added to the ${existingDevice.roomName}`)
         return; // Exit function early without creating a new device
       }
-      
+
       // const user = await User.findOne({ uid: uid }).populate('homeId');
       const room = await Room.findById(roomId);
       const device = new Device({ nameDevice, iconName, roomName, pinEsp, roomId, homeId });
@@ -234,6 +240,76 @@ const deviceController = {
     } catch (error) {
       console.error(error);
     }
+  },
+
+  updateDeviceStatusBySchedule: async (io) => {
+    try {
+      const currentDateTime = new Date();
+
+      const devices = await Device.find({
+        $and: [
+          { timeOn: { $ne: null } },
+          { timeOff: { $ne: null } },
+          {
+            dayRunning: {
+              $in: [
+                currentDateTime.toLocaleString('en-US', { weekday: 'short' }),
+                'everyday'
+              ]
+            }
+          }
+        ]
+      });
+
+      const devicesToUpdateOn = devices.filter(device => {
+        const timeOn = moment(`${currentDateTime.toLocaleDateString()} ${device.timeOn}`, 'MM/DD/YYYY hh:mm A').toDate();
+        const timeOff = moment(`${currentDateTime.toLocaleDateString()} ${device.timeOff}`, 'MM/DD/YYYY hh:mm A').toDate();
+        const dayRunning = device.dayRunning.includes('everyday') || device.dayRunning.includes(currentDateTime.toLocaleString('en-US', { weekday: 'short' }));
+
+        return moment(currentDateTime).isBetween(timeOn, timeOff, null, '[]') && dayRunning && device.dayRunningStatus;
+      });
+
+      const devicesToUpdateOff = devices.filter(device => {
+        const timeOff = moment(`${currentDateTime.toLocaleDateString()} ${device.timeOff}`, 'MM/DD/YYYY hh:mm A').toDate();
+        const dayRunning = device.dayRunning.includes('everyday') || device.dayRunning.includes(currentDateTime.toLocaleString('en-US', { weekday: 'short' }));
+
+        return currentDateTime > timeOff && dayRunning && device.dayRunningStatus;
+      });
+
+      if (devicesToUpdateOn.length > 0) {
+        const deviceIds = devicesToUpdateOn.map(device => device._id);
+        await Device.updateMany({ _id: { $in: deviceIds } }, { status: true });
+        devicesToUpdateOn.forEach(async device => {
+          device.countOn++;
+          await device.save();
+        });
+        deviceController.getListDevicesRunning({ homeId: devicesToUpdateOn[0].homeId }, io);
+      }
+
+      if (devicesToUpdateOff.length > 0) {
+        const deviceIds = devicesToUpdateOff.map(device => device._id);
+        await Device.updateMany({ _id: { $in: deviceIds } }, { status: false });
+        deviceController.getListDevicesRunning({ homeId: devicesToUpdateOff[0].homeId }, io);
+      }
+    } catch (error) {
+      console.error('Error updating device status by schedule:', error);
+    }
+  },
+  reportDataDevice: async (data, io) => {
+    const { homeId } = data;
+    const devices = await Device.find({ homeId: homeId });
+    const labelsArray = devices.map(device => {
+      const firstLetter = device.nameDevice.charAt(0).toUpperCase();
+      const secondLetter = device.roomName.charAt(0).toUpperCase();
+      return `${firstLetter}-${secondLetter}`;
+    });
+    const countOnArray = devices.map(device => device.countOn);
+    const consumesArray = devices.map(device => device.consumes);
+
+    const chartData = [{ labels: labelsArray, data: countOnArray }, { labels: labelsArray, data: consumesArray }];
+
+    io.to(homeId).emit('reportData', chartData)
+
   }
 };
 

@@ -1,11 +1,27 @@
 const Home = require('../model/home.model');
 const User = require('../model/user.model');
+const Room = require('../model/room.model');
+const Device = require('../model/device.model');
+
+
+function makeId(length) {
+    let result = "";
+    const characters =
+        "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+    const charactersLength = characters.length;
+    let counter = 0;
+    while (counter < length) {
+        result += characters.charAt(Math.floor(Math.random() * charactersLength));
+        counter += 1;
+    }
+    return result;
+}
 
 const homeController = {
     getListshome: async (data, io, socket) => {
-        const {_id,homeId}=data;
+        const { _id, homeId } = data;
         try {
-            const homes = await Home.find({_id:homeId});
+            const homes = await Home.find({ _id: homeId });
             io.to(_id).emit("listHomeUser", homes)
         } catch (error) {
             console.log(error);
@@ -19,42 +35,102 @@ const homeController = {
             console.log(error);
         }
     },
-    createHome: async (req, res) => {
-        const { nameHome } = req;
-        console.log(nameHome);
-        const newHome = new Home({ nameHome });
+    createHome: async (dataHome, io) => {
         try {
-            await newHome.save();
-        } catch (error) {
-            console.log(error);
-        }
-    },
-    getDropDownRoom: async (dataRoom, io) => {
-        try {
-            const { uid, homeId } = dataRoom;
+            const { uid } = dataHome;
+            const home = new Home({ nameHome: makeId(5), uid });
+            await home.save();
 
             const user = await User.findOne({ uid: uid });
-            if (!user || !user.homeId) {
+            user.homeId.push(home._id);
+            await user.save();
+            await homeController.getDropDownHome(dataHome, io)
+            await homeController.myHomeList(dataHome, io)
 
+        } catch (error) {
+            console.log(error);
+            return null;
+        }
+    },
+
+    myHomeList: async (data, io) => {
+        try {
+            const { uid } = data;
+            const home = await Home.find({ uid: uid }).populate('roomId');
+            io.emit(`myHomeList${uid}`, home);
+        } catch (error) {
+            console.log(error);
+            return null;
+        }
+    },
+    deleteHome: async (data, io) => {
+        try {
+
+            const { uid, id } = data;
+
+            // Lấy danh sách các roomId của các phòng thuộc nhà cần xóa
+            const home = await Home.findById(id).populate('roomId');
+            const roomIds = home.roomId.map(room => room._id);
+
+            // Xóa tất cả các phòng (rooms) thuộc danh sách roomIds
+            await Room.deleteMany({ _id: { $in: roomIds } });
+
+            // Xóa tất cả các thiết bị (devices) thuộc danh sách roomIds
+            await Device.deleteMany({ roomId: { $in: roomIds } });
+
+            // Xóa nhà (home)
+            await Home.findByIdAndDelete(id);
+
+            // Xóa homeId của tất cả các user chứa homeId bị xóa
+            await User.updateMany({ homeId: id }, { $pull: { homeId: id } });
+
+            await homeController.getDropDownHome(data, io)
+
+
+        } catch (err) {
+            console.log(err)
+        }
+    },
+
+    getDropDownHome: async (dataHome, io) => {
+        try {
+            const { uid, homeId } = dataHome;
+
+            const user = await User.findOne({ uid: uid }).populate({
+                path: 'homeId',
+                model: 'Home',
+                select: ['nameHome', '_id'],
+            });
+            if (!user || !user.homeId) {
                 return;
             }
 
-            const roomIds = user.homeId;
-            const promises = roomIds.map(async (id) => {
-                try {
-                    const room = await Home.findById(id);
-                    return { label: room.nameHome, value: room._id };
-                } catch (error) {
-                    console.error(error);
-                    return null;
-                }
-            });
-            const rooms = await Promise.all(promises);
-            const arrDropDown = rooms.filter((room) => room !== null);
-
-            io.emit(`dropDownRoom${uid}`, arrDropDown);
+            const homes = user.homeId.map((home) => ({
+                label: home.nameHome,
+                value: home._id,
+            }));
+            io.emit(`dropDownRoom${uid}`, homes);
         } catch (error) {
             console.error(error);
+        }
+    },
+    updateHomeName: async (data, io) => {
+        const { nameHome, homeId } = data
+        try {
+            await Home.findByIdAndUpdate(
+                homeId,
+                { nameHome },
+                { new: true }
+            );
+
+            const users = await User.find({ homeId }).select('uid');
+            users.forEach(async (user) => {
+                await homeController.getDropDownHome(user, io);
+              });
+
+            await homeController.myHomeList(data, io)
+        } catch (error) {
+            console.error('Error updating home name:', error);
         }
     }
 };

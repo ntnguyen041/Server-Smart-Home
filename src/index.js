@@ -7,7 +7,9 @@ const userController = require('./controller/user.controller')
 const roomController = require('./controller/room.controller')
 const deviceController = require('./controller/device.controller')
 const homeController = require('./controller/home.controller')
+const notificationController = require('./controller/notification.controller')
 const Device = require('./model/device.model')
+const schedule = require('node-schedule');
 
 require('dotenv').config();
 const app = express();
@@ -31,12 +33,22 @@ const io = new Server(server, {
     },
 });
 
+// Thiết lập lịch cho việc kiểm tra và cập nhật trạng thái thiết bị
+
+
 
 io.on("connection", (socket) => {
 
     console.log(`User connect: ${socket.id}`);
 
+    const scheduleDeviceUpdate = () => {
+        schedule.scheduleJob('* * * * *', async () => {
+            await deviceController.updateDeviceStatusBySchedule(io);
+        });
+    };
 
+    // Sử dụng hàm này để bắt đầu cập nhật trạng thái thiết bị theo lịch
+    scheduleDeviceUpdate();
 
     socket.on('DataSensor', data => {
         io.emit('DataSensor', data)
@@ -73,7 +85,7 @@ io.on("connection", (socket) => {
 
     }, 2000);
 
-   
+
 
     socket.on("disconnect", () => {
         console.log(`User disconnect: ${socket.id}`)
@@ -86,8 +98,8 @@ io.on("connection", (socket) => {
     socket.on('getAllUser', async (data) => {
         userController.getlistUser(data, io);
     });
-    socket.on('getUserLogin', async (uid) => {
-        userController.getUserLogin(uid, io, socket);
+    socket.on('getUserLogin', async (data) => {
+        userController.getUserLogin(data, io, socket);
     });
     socket.on('getUser', async (uid) => {
         userController.getUser(uid, io, socket);
@@ -134,8 +146,6 @@ io.on("connection", (socket) => {
     socket.on('deleteRoom', async (roomId) => {
         roomController.deleteRoom(roomId, io, socket);
     });
-
-
 
     // Device
 
@@ -191,7 +201,7 @@ io.on("connection", (socket) => {
 
     // Home
     socket.on('getHomeUser', async (data) => {
-       homeController.getListshome(data, io, socket);
+        homeController.getListshome(data, io, socket);
     });// nguyen
     socket.on('createHome', async (homeData) => {
         homeController.createHome(homeData, io, socket);
@@ -199,19 +209,49 @@ io.on("connection", (socket) => {
     socket.on("getitemhome", async (data) => {
         homeController.getList(data, io, socket)
     })
-    socket.on('dropDownRoom', (dataRoom) => {
-        homeController.getDropDownRoom(dataRoom, io)
+    socket.on('dropDownHome', async (dataRoom) => {
+        homeController.getDropDownHome(dataRoom, io)
     })
+    socket.on('myHomeList', async data => {
+        homeController.myHomeList(data, io)
+    })
+    socket.on('deleteHome', async data => {
+        homeController.deleteHome(data, io)
+    })
+    socket.on('updateHomeName', async (data) => {
+        homeController.updateHomeName(data, io)
+    })
+
+    //
+    socket.on('reportData', async data => {
+        deviceController.reportDataDevice(data, io);
+    })
+    // Notification
+
+    socket.on('getListNotification', async notificationData => {
+        notificationController.getListNotification(notificationData, io)
+    })
+
+    // notificationController.createNotification('zcv', 'zxcv', 'flashlight-outline', '64a3de2814b0c81928b21d97')
+
+    socket.on('deleteNotification', async notificationData => {
+        notificationController.deleteNotification(notificationData, io)
+    })
+
+    //
+
+
 
     //
 
     socket.on('buttonState', async data => {
         const { homeId, pinEsp, status } = data;
 
-       
-        const deviceUpdate = await Device.findOneAndUpdate({ pinEsp: pinEsp }, { status: status })
 
-        socket.to(homeId).emit('deviceUpdated', { idDevice: deviceUpdate._id, status: status });
+        console.log(data)
+        // const deviceUpdate = await Device.findOneAndUpdate({ pinEsp: pinEsp }, { status: status })
+
+        // socket.to(homeId).emit('deviceUpdated', { idDevice: deviceUpdate._id, status: status });
 
     })
 
