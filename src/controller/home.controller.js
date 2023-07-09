@@ -14,7 +14,10 @@ const homeController = {
     getList: async (homeId, io, socket) => {
         try {
             const homes = await Home.findById(homeId).populate('roomId');
-            io.to(socket.id).emit("listRoom", homes.roomId)
+            if(homes!=null){
+
+                io.to(socket.id).emit("listRoom", homes.roomId)
+            }
         } catch (error) {
             console.log(error);
         }
