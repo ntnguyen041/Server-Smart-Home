@@ -45,6 +45,7 @@ io.on("connection", (socket) => {
     })
 
     socket.on('loginadmin', (data) => {
+        console.log(data)
         userController.login(data, io);
     })// nguyen
     socket.on('joinRoom', token => {
