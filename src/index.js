@@ -12,6 +12,8 @@ const Device = require('./model/device.model')
 const schedule = require('node-schedule');
 
 require('dotenv').config();
+const User = require('./model/user.model')
+
 const app = express();
 var port = process.env.PORT || 3001;
 
@@ -55,8 +57,9 @@ io.on("connection", (socket) => {
     })
 
     socket.on('loginadmin', (data) => {
+        console.log(data)
         userController.login(data, io);
-    })
+    })// nguyen
     socket.on('joinRoom', token => {
         socket.join(token);
         const room = io.sockets.adapter.rooms.get(token);
@@ -254,6 +257,7 @@ io.on("connection", (socket) => {
         // socket.to(homeId).emit('deviceUpdated', { idDevice: deviceUpdate._id, status: status });
 
     })
+
 
 });
 
