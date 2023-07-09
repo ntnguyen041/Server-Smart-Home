@@ -26,10 +26,10 @@ const deviceController = {
     }
   },
   getList: async (dataDevice, io, socket) => {
-    const { homeId, roomId } = dataDevice;
+    const { homeId, roomId, uid } = dataDevice;
     try {
       const room = await Room.findById(roomId).populate('devicesId');
-      io.to(homeId).emit('listDevice', room.devicesId);
+      io.emit(`listDevice${uid}`, room.devicesId);
     } catch (error) {
       console.error(error);
     }
