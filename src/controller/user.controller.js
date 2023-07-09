@@ -38,15 +38,30 @@ const userController = {
   /// trong 1 nha //nguyen
   getlistUser: async (data, io) => {
     const { uid, homeId } = data;
-    User.find({homeId:homeId})
-    .then((users) => {
-      if(users!=null){
-        io.emit('listUserView',users);
-      }
-    })
-    .catch((err) => {
-      console.error(err);
-    });
+    User.find({ homeId: homeId })
+      .then((users) => {
+        if (users != null) {
+          io.emit('listUserView', users);
+        }
+      })
+      .catch((err) => {
+        console.error(err);
+      });
+  },
+
+  getUserLogin: async (data, io) => {
+    try {
+      const { uid } = data;
+      User.findOne({ uid: uid })
+        .then((users) => {
+          io.emit(`getUserLogin${uid}`, users.homeId[0]);
+        })
+        .catch((err) => {
+          console.error(err);
+        });
+    } catch (err) {
+      console.log(err)
+    }
   },
 
   getUser: async (dataUser, io) => {
@@ -73,7 +88,7 @@ const userController = {
   createUser: async (userData, io) => {
     try {
       const { uid, nameUser, phoneUser, imageUser, nameHome } = userData;
-      const home = new Home({ nameHome })
+      const home = new Home({ nameHome, uid })
       await home.save();
       const user = new User({ uid, nameUser, phoneUser, imageUser });
       user.homeId.push(home._id)
@@ -101,9 +116,8 @@ const userController = {
 
   addHoomToUser: async (data, io) => {
     try {
-      const { numberPhone, uid } = data;
-      const user = await User.findOne({ uid });
-      const homeId = user.homeId[0];
+      const { numberPhone, homeId } = data;
+
 
       const filter = { phoneUser: numberPhone };
       const update = { $addToSet: { homeId: homeId } };
@@ -126,17 +140,29 @@ const userController = {
     }
   },
   listUserToRoomId: async (data, io) => {
-    const { homeId, uid } = data;
+    const { uid } = data;
+    let arr = [];
 
-    const users = await User.find({ homeId: homeId });
+    const homes = await Home.find({ uid: uid }).select('_id nameHome');
 
-    const filteredUsers = users.filter(user => user.uid !== uid); // lọc bỏ User có uid giống với uid truyền vào
+    const arrPromises = homes.map(async item => {
+      const users = await User.find({ homeId: item._id });
+      const filteredUsers = users.filter(user => user.uid !== uid);
+      const list = {
+        id: item._id,
+        nameHome: item.nameHome,
+        user: filteredUsers,
+      };
+      return list;
+    });
 
-    io.emit(`listUserToRoomId${uid}`, filteredUsers);
+    arr = await Promise.all(arrPromises);
+
+    io.emit(`listUserToRoomId${uid}`, arr);
   },
 
   deleteUserToRoomId: async (data, io) => {
-    const { id, homeId, uid } = data;
+    const { id, homeId } = data;
     const filter = { _id: id };
     const update = { $pull: { homeId: homeId } };
     const options = { new: true };
@@ -145,6 +171,9 @@ const userController = {
     const promises = roomIds.map(async (id) => {
       try {
         const room = await Home.findById(id);
+        if (!room) {
+          return null; // Skip null values
+        }
         return { label: room.nameHome, value: room._id };
       } catch (error) {
         console.error(error);
