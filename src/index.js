@@ -30,7 +30,7 @@ mongoose.connect(process.env.URL_MONGO, {
 // `http://localhost:3000`, 
 const io = new Server(server, {
     cors: {
-        origin: [`https://smarthome-ckc.onrender.com`],
+        origin: [`http://localhost:3000`],
         methods: ["GET", "POST"],
     },
 });
