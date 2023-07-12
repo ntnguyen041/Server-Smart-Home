@@ -31,7 +31,7 @@ mongoose.connect(process.env.URL_MONGO, {
 })
     .then(() => console.log('Connected to MongoDB'))
     .catch((err) => console.error('Could not connect to MongoDB', err));
-// `http://localhost:3000`, 
+// `http://localhost:3000  https://smarthome-ckc.onrender.com`, 
 const io = new Server(server, {
     cors: {
         origin: [`https://smarthome-ckc.onrender.com`],
