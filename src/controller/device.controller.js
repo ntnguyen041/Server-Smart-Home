@@ -9,18 +9,13 @@ const filterDevices = (devices, currentDateTime) => {
     const timeOn = moment(`${currentDateTime.toLocaleDateString()} ${device.timeOn}`, 'MM/DD/YYYY hh:mm A').toDate();
     const timeOff = moment(`${currentDateTime.toLocaleDateString()} ${device.timeOff}`, 'MM/DD/YYYY hh:mm A').toDate();
     const dayRunning = device.dayRunning.includes('everyday') || device.dayRunning.includes(currentDateTime.toLocaleString('en-US', { weekday: 'short' }));
-
-    const shouldTurnOn = moment(currentDateTime).isSame(timeOn, 'minute') && dayRunning;
-    const shouldTurnOff = moment(currentDateTime).isSame(timeOff, 'minute') && dayRunning;
-
-    return (shouldTurnOn && !device.status) || (shouldTurnOff && device.status);
+    return moment(currentDateTime).isBetween(timeOn, timeOff, null, '[]') && dayRunning && device.dayRunningStatus;
   });
 };
 
 const emitButtonStateAndSave = async (devicesToUpdate, io, status) => {
   const deviceIds = devicesToUpdate.map(device => device._id);
   for (const device of devicesToUpdate) {
-
     io.emit('buttonState', { status, pinEsp: device.pinEsp });
   }
   await Device.updateMany({ _id: { $in: deviceIds } }, { status });
@@ -30,7 +25,6 @@ const emitButtonStateAndSave = async (devicesToUpdate, io, status) => {
   });
   deviceController.getListDevicesRunning({ homeId: devicesToUpdate[0].homeId }, io);
 };
-
 const deviceController = {
   // nguyen
   getLists: async (data, io, socket) => {
@@ -271,7 +265,6 @@ const deviceController = {
   updateDeviceStatusBySchedule: async (io) => {
     try {
       const currentDateTime = new Date();
-
       const devices = await Device.find({
         $and: [
           { timeOn: { $ne: null } },
@@ -294,6 +287,8 @@ const deviceController = {
 
         return currentDateTime > timeOff && dayRunning && device.dayRunningStatus;
       });
+
+      console.log(devicesToUpdateOff)
 
       if (devicesToUpdateOn.length > 0) {
         await emitButtonStateAndSave(devicesToUpdateOn, io, true);
