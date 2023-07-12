@@ -85,22 +85,44 @@ const userController = {
       });
   },
   // Tạo user mới và lưu vào MongoDB
+  // createUser: async (userData, io) => {
+  //   try {
+  //     const { uid, nameUser, phoneUser, imageUser, nameHome } = userData;
+  //     const home = new Home({ nameHome, uid })
+  //     await home.save();
+  //     const user = new User({ uid, nameUser, phoneUser, imageUser });
+  //     user.homeId.push(home._id)
+  //     await user.save();
+  //     io.to(uid).emit("homeCreated", home._id);
+  //   } catch (error) {
+  //     console.error(error);
+  //     throw new Error("Error creating user");
+  //   }
+  // },
+
+  // Cập nhật user và lưu vào MongoDB
+
   createUser: async (userData, io) => {
     try {
       const { uid, nameUser, phoneUser, imageUser, nameHome } = userData;
-      const home = new Home({ nameHome, uid })
-      await home.save();
+
+      const home = new Home({ nameHome, uid });
       const user = new User({ uid, nameUser, phoneUser, imageUser });
-      user.homeId.push(home._id)
-      await user.save();
+
+      user.homeId.push(home._id);
+
+      // Save both documents at the same time
+      await Promise.all([home.save(), user.save()]);
+
       io.to(uid).emit("homeCreated", home._id);
     } catch (error) {
       console.error(error);
-      throw new Error("Error creating user");
+
+      // Send specific error message
+      throw new Error(`Error creating user: ${error.message}`);
     }
   },
 
-  // Cập nhật user và lưu vào MongoDB
   updateUser: async (userData, io, socket) => {
     const { uid, imageUser, nameUser, mailUser, nameHome, homeId, _id } = userData
     try {
@@ -167,8 +189,9 @@ const userController = {
     const update = { $pull: { homeId: homeId } };
     const options = { new: true };
     const updatedUser = await User.findOneAndUpdate(filter, update, options);
-    const roomIds = updatedUser.homeId;
-    const promises = roomIds.map(async (id) => {
+    const home = await Home.findById(homeId).select('_id nameHome')
+    const homeIds = updatedUser.homeId;
+    const promises = homeIds.map(async (id) => {
       try {
         const room = await Home.findById(id);
         if (!room) {
@@ -183,8 +206,12 @@ const userController = {
     const rooms = await Promise.all(promises);
     const arrDropDown = rooms.filter((room) => room !== null);
 
-    io.emit(`updateDropDownHome${updatedUser.uid}`, arrDropDown)
+    io.emit(`updateDropDownHome${updatedUser.uid}`, { arrDropDown, home })
     userController.listUserToRoomId(data, io)
+  },
+
+  sendTokenDeviceToEsp: async (token, io) => {
+    console.log(token)
   }
 }
 

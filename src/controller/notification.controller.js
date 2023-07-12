@@ -2,16 +2,18 @@
 const Notification = require('../model/notification.model');
 
 const notificationController = {
-    createNotification: async (title, subTitle, iconName, homeId) => {
+    createNotification: async (data, io) => {
         try {
+            const { homeId, iconName, title, subTitle } = data;
             const notification = await Notification.create({
                 title: title,
                 subTitle: subTitle,
                 iconName: iconName,
                 homeId: homeId
             });
-            console.log('Notification created successfully:', notification);
-            return notification;
+            notificationController.getListNotification(homeId, io)
+            // console.log('Notification created successfully:', notification);
+            // return notification;
         } catch (error) {
             console.error('Error creating notification:', error);
             throw error;
