@@ -15,7 +15,6 @@ const roomController = {
       console.error(error);
     }
   },
-
   selectRoom: async (data, io, socket) => {
     try {
       const { homeId, uid } = data;

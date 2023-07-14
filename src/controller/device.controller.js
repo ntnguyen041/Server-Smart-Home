@@ -243,7 +243,7 @@ const deviceController = {
       // Check if a device with the same homeId and pinEsp already exists
       const existingDevice = await Device.findOne({ homeId, pinEsp });
       if (existingDevice) {
-        console.log(`A device with homeId ${homeId} and pinEsp ${pinEsp} already exists`);
+        //console.log(`A device with homeId ${homeId} and pinEsp ${pinEsp} already exists`);
         io.emit(`qrScanFailed${uid}`, `This device is added to the ${existingDevice.roomName}`)
         return; // Exit function early without creating a new device
       }
@@ -287,8 +287,6 @@ const deviceController = {
 
         return currentDateTime > timeOff && dayRunning && device.dayRunningStatus;
       });
-
-      // console.log(devicesToUpdateOff)
 
       if (devicesToUpdateOn.length > 0) {
         await emitButtonStateAndSave(devicesToUpdateOn, io, true);

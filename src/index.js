@@ -51,7 +51,7 @@ io.on("connection", (socket) => {
         });
     };
 
-    // Sử dụng hàm này để bắt đầu cập nhật trạng thái thiết bị theo lịch
+    // Sử dụng hàm này 89/*--*
     scheduleDeviceUpdate();
 
     socket.on('DataSensor', data => {
@@ -59,7 +59,7 @@ io.on("connection", (socket) => {
     })
 
     socket.on('loginadmin', (data) => {
-        console.log(data)
+       // console.log(data)
         userController.login(data, io);
     })// nguyen
     socket.on('joinRoom', token => {
