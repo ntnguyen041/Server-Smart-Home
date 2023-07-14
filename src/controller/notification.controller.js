@@ -1,5 +1,7 @@
 
 const Notification = require('../model/notification.model');
+const moment = require("moment-timezone");
+
 
 const notificationController = {
     createNotification: async (data, io) => {
@@ -21,10 +23,20 @@ const notificationController = {
     },
     getListNotification: async (homeId, io) => {
         try {
+            const now = new Date();
             const notifications = await Notification.find({ homeId: homeId });
-            io.to(homeId).emit('getListNotification', notifications)
+            const formattedNotifications = notifications.map((notification) => {
+                const formattedNotification = { ...notification.toObject() };
+                if (notification.timeCreate) {
+                    const timeCreate = new Date(notification.timeCreate);
+                    const formattedTimeString = moment(timeCreate).locale("en").from(now);
+                    formattedNotification.timeCreate = formattedTimeString;
+                }
+                return formattedNotification;
+            });
+            io.to(homeId).emit("getListNotification", formattedNotifications);
         } catch (error) {
-            console.error('Error retrieving notifications:', error);
+            console.error("Error retrieving notifications:", error);
             throw error;
         }
     },

@@ -18,7 +18,7 @@ const emitButtonStateAndSave = async (devicesToUpdate, io, status) => {
   for (const device of devicesToUpdate) {
     io.emit('buttonState', { status, pinEsp: device.pinEsp });
   }
-  await Device.updateMany({ _id: { $in: deviceIds } }, { status });
+  await Device.updateMany({ _id: { $in: deviceIds } }, { status, dayRunningStatus: status });
   devicesToUpdate.forEach(async device => {
     device.countOn++;
     await device.save();
@@ -288,8 +288,6 @@ const deviceController = {
         return currentDateTime > timeOff && dayRunning && device.dayRunningStatus;
       });
 
-      //console.log(devicesToUpdateOff)
-
       if (devicesToUpdateOn.length > 0) {
         await emitButtonStateAndSave(devicesToUpdateOn, io, true);
       }
@@ -319,14 +317,15 @@ const deviceController = {
   },
 
   updateDeviceOnOffEsp: async (data, io, socket) => {
-
     const { homeId, pinEsp, status } = data;
-    const deviceUpdate = await Device.findOneAndUpdate({ pinEsp: pinEsp }, { status: status })
-
+    console.log(data)
+    const deviceUpdate = await Device.findOneAndUpdate({ pinEsp: pinEsp, homeId: homeId }, { status: status })
     deviceController.getListDevicesRunning(data, io, socket)
 
     socket.to(homeId).emit('deviceUpdated', { idDevice: deviceUpdate._id, status: status });
   },
+
+
   resetDeviceState: async (data, io) => {
     const { homeId, pinsEsp, statuss } = data;
     await pinsEsp.forEach(async pinEsp => {

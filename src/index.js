@@ -10,11 +10,9 @@ const roomController = require('./controller/room.controller')
 const deviceController = require('./controller/device.controller')
 const homeController = require('./controller/home.controller')
 const notificationController = require('./controller/notification.controller')
-const Home = require('./model/home.model')
 const schedule = require('node-schedule');
 
 require('dotenv').config();
-const User = require('./model/user.model')
 
 let expo = new Expo();
 
@@ -81,17 +79,6 @@ io.on("connection", (socket) => {
             socketToRemove.leave(token.roomIdPrev);
         }
     })
-
-    // function getRandomArbitrary(min, max) {
-    //     return Math.floor(Math.random() * min) + max;
-    // }
-
-
-    // setInterval(function () {
-    //     socket.emit('randomNumber', { temperature: getRandomArbitrary(10, 25), inDoor: getRandomArbitrary(25, 35), outDoor: getRandomArbitrary(25, 35) })
-
-    // }, 2000);
-
 
 
     socket.on("disconnect", () => {
@@ -251,8 +238,6 @@ io.on("connection", (socket) => {
     socket.on('createNotification', async data => {
         notificationController.createNotification(data, io)
     })
-
-    // notificationController.createNotification('zcv', 'zxcv', 'flashlight-outline', '64a3de2814b0c81928b21d97')
 
     socket.on('deleteNotification', async notificationData => {
         notificationController.deleteNotification(notificationData, io)
