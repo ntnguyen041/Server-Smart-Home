@@ -5,6 +5,7 @@ const notificationSchema = new mongoose.Schema({
     subTitle: { type: String, required: true },
     iconName: { type: String, required: true },
     homeId: { type: String, required: true },
+    timeCreate: { type: Date, default: Date.now }
 });
 
 module.exports = mongoose.model('Notification', notificationSchema);
