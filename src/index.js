@@ -61,7 +61,7 @@ io.on("connection", (socket) => {
     })
 
     socket.on('loginadmin', (data) => {
-        console.log(data)
+       // console.log(data)
         userController.login(data, io);
     })// nguyen
     socket.on('joinRoom', token => {
@@ -279,36 +279,36 @@ io.on("connection", (socket) => {
     // })
 
 
-    socket.on('sendToken', async (data) => {
-        const { token, homeId } = data;
-        await Home.findOneAndUpdate({ _id: homeId }, { tokens: "asdf" }).then((home) => console.log(home))
-        // console.log(data)
+    // socket.on('sendToken', async (data) => {
+    //     const { token, homeId } = data;
+    //     await Home.findOneAndUpdate({ _id: homeId }, { tokens: "asdf" }).then((home) => console.log(home))
+    //     // console.log(data)
 
-        // // Make sure the token is an Expo push token
-        // if (!Expo.isExpoPushToken(token)) {
-        //     console.error(`Push token ${token} is not a valid Expo push token`);
-        //     return;
-        // }
+    //     // // Make sure the token is an Expo push token
+    //     // if (!Expo.isExpoPushToken(token)) {
+    //     //     console.error(`Push token ${token} is not a valid Expo push token`);
+    //     //     return;
+    //     // }
 
-        // // Create a message object
-        // let message = {
-        //     to: token,
-        //     sound: 'default',
-        //     body: 'This is a test notification',
-        //     data: { homeId: homeId },
-        // };
+    //     // // Create a message object
+    //     // let message = {
+    //     //     to: token,
+    //     //     sound: 'default',
+    //     //     body: 'This is a test notification',
+    //     //     data: { homeId: homeId },
+    //     // };
 
-        // // Set an interval to send a push notification every 2 seconds
+    //     // // Set an interval to send a push notification every 2 seconds
 
-        // try {
-        //     // Use the Expo API to send the message
-        //     let response = await axios.post('https://api.expo.dev/v2/push/send', message);
-        //     console.log(response.data);
-        // } catch (error) {
-        //     console.error(error);
-        // }
+    //     // try {
+    //     //     // Use the Expo API to send the message
+    //     //     let response = await axios.post('https://api.expo.dev/v2/push/send', message);
+    //     //     console.log(response.data);
+    //     // } catch (error) {
+    //     //     console.error(error);
+    //     // }
 
-    });
+    // });
 
 });
 
