@@ -30,7 +30,7 @@ mongoose.connect(process.env.URL_MONGO, {
 // `http://localhost:3000  https://smarthome-ckc.onrender.com`, 
 const io = new Server(server, {
     cors: {
-        origin: [`https://smarthome-ckc.onrender.com`],
+        origin: [`http://localhost:3000`],
         methods: ["GET", "POST"],
     },
 });
@@ -49,7 +49,7 @@ io.on("connection", (socket) => {
         });
     };
 
-    // Sử dụng hàm này để bắt đầu cập nhật trạng thái thiết bị theo lịch
+    // Sử dụng hàm này 89/*--*
     scheduleDeviceUpdate();
 
     socket.on('DataSensor', data => {
