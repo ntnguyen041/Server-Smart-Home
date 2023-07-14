@@ -10,11 +10,9 @@ const roomController = require('./controller/room.controller')
 const deviceController = require('./controller/device.controller')
 const homeController = require('./controller/home.controller')
 const notificationController = require('./controller/notification.controller')
-const Home = require('./model/home.model')
 const schedule = require('node-schedule');
 
 require('dotenv').config();
-const User = require('./model/user.model')
 
 let expo = new Expo();
 
@@ -81,17 +79,6 @@ io.on("connection", (socket) => {
             socketToRemove.leave(token.roomIdPrev);
         }
     })
-
-    // function getRandomArbitrary(min, max) {
-    //     return Math.floor(Math.random() * min) + max;
-    // }
-
-
-    // setInterval(function () {
-    //     socket.emit('randomNumber', { temperature: getRandomArbitrary(10, 25), inDoor: getRandomArbitrary(25, 35), outDoor: getRandomArbitrary(25, 35) })
-
-    // }, 2000);
-
 
 
     socket.on("disconnect", () => {
@@ -252,8 +239,6 @@ io.on("connection", (socket) => {
         notificationController.createNotification(data, io)
     })
 
-    // notificationController.createNotification('zcv', 'zxcv', 'flashlight-outline', '64a3de2814b0c81928b21d97')
-
     socket.on('deleteNotification', async notificationData => {
         notificationController.deleteNotification(notificationData, io)
     })
@@ -279,36 +264,36 @@ io.on("connection", (socket) => {
     // })
 
 
-    socket.on('sendToken', async (data) => {
-        const { token, homeId } = data;
-        await Home.findOneAndUpdate({ _id: homeId }, { tokens: "asdf" }).then((home) => console.log(home))
-        // console.log(data)
+    // socket.on('sendToken', async (data) => {
+    //     const { token, homeId } = data;
+    //     await Home.findOneAndUpdate({ _id: homeId }, { tokens: "asdf" }).then((home) => console.log(home))
+    //     // console.log(data)
 
-        // // Make sure the token is an Expo push token
-        // if (!Expo.isExpoPushToken(token)) {
-        //     console.error(`Push token ${token} is not a valid Expo push token`);
-        //     return;
-        // }
+    //     // // Make sure the token is an Expo push token
+    //     // if (!Expo.isExpoPushToken(token)) {
+    //     //     console.error(`Push token ${token} is not a valid Expo push token`);
+    //     //     return;
+    //     // }
 
-        // // Create a message object
-        // let message = {
-        //     to: token,
-        //     sound: 'default',
-        //     body: 'This is a test notification',
-        //     data: { homeId: homeId },
-        // };
+    //     // // Create a message object
+    //     // let message = {
+    //     //     to: token,
+    //     //     sound: 'default',
+    //     //     body: 'This is a test notification',
+    //     //     data: { homeId: homeId },
+    //     // };
 
-        // // Set an interval to send a push notification every 2 seconds
+    //     // // Set an interval to send a push notification every 2 seconds
 
-        // try {
-        //     // Use the Expo API to send the message
-        //     let response = await axios.post('https://api.expo.dev/v2/push/send', message);
-        //     console.log(response.data);
-        // } catch (error) {
-        //     console.error(error);
-        // }
+    //     // try {
+    //     //     // Use the Expo API to send the message
+    //     //     let response = await axios.post('https://api.expo.dev/v2/push/send', message);
+    //     //     console.log(response.data);
+    //     // } catch (error) {
+    //     //     console.error(error);
+    //     // }
 
-    });
+    // });
 
 });
 
