@@ -9,9 +9,10 @@ const roomController = {
     try {
       const { homeId } = data;
       const home = await Home.findById(homeId).populate('roomId');
-      io.to(homeId).emit("listRoom", home.roomId);
+      if (home)
+        io.to(homeId).emit("listRoom", home.roomId);
     } catch (error) {
-      console.log(error);
+      console.error(error);
     }
   },
 
@@ -27,21 +28,25 @@ const roomController = {
 
   createRoom: async (roomData, io, socket) => {
     const { nameRoom, imageRoom, homeId, uid } = roomData;
-
+  
     try {
-      // const user = await User.findOne({ uid: uid }).populate('homeId');
       const home = await Home.findById(homeId);
+  
       const room = new Room({ nameRoom, imageRoom });
+  
       home.roomId.push(room._id);
-      await home.save();
-      await room.save();
-      // Gửi thông tin của phòng mới được thêm vào
+  
+      // Use Promise.all to save both documents at the same time
+      await Promise.all([home.save(), room.save()]);
+  
+      // Emit the new room's info
       io.to(homeId).emit("createRoom", room);
       // await roomController.getList(roomData, io, socket);
     } catch (error) {
       console.error(error);
     }
   },
+
   deleteRoom: async (roomData, io, socket) => {
     const { homeId, roomId, uid } = roomData;
 

@@ -30,10 +30,7 @@ const homeController = {
     getList: async (homeId, io, socket) => {
         try {
             const homes = await Home.findById(homeId).populate('roomId');
-            if(homes!=null){
-
-                io.to(socket.id).emit("listRoom", homes.roomId)
-            }
+            io.to(socket.id).emit("listRoom", homes.roomId)
         } catch (error) {
             console.log(error);
         }
@@ -75,6 +72,9 @@ const homeController = {
             const home = await Home.findById(id).populate('roomId');
             const roomIds = home.roomId.map(room => room._id);
 
+            // Lấy danh sách user có trường homeId[] chứa nhà bị xóa
+            const users = await User.find({ homeId: id, uid: { $ne: uid } });
+
             // Xóa tất cả các phòng (rooms) thuộc danh sách roomIds
             await Room.deleteMany({ _id: { $in: roomIds } });
 
@@ -86,6 +86,22 @@ const homeController = {
 
             // Xóa homeId của tất cả các user chứa homeId bị xóa
             await User.updateMany({ homeId: id }, { $pull: { homeId: id } });
+
+            // Gửi thông báo đến các user được tìm thấy
+            users.forEach(async user => {
+                let dropDownPromises = user.homeId.map(async id => {
+                    const home = await Home.findById(id);
+                    if (!home) return; // If home is null or undefined, return undefined
+                    return { label: home.nameHome, value: home._id };
+                });
+
+                let dropDown = await Promise.all(dropDownPromises);
+
+                // Filter out any undefined values from the dropDown array
+                dropDown = await dropDown.filter(item => item !== undefined);
+
+                io.emit(`deleteHome${user.uid}`, { home, dropDown });
+            });
 
             await homeController.getDropDownHome(data, io)
 
@@ -129,7 +145,7 @@ const homeController = {
             const users = await User.find({ homeId }).select('uid');
             users.forEach(async (user) => {
                 await homeController.getDropDownHome(user, io);
-              });
+            });
 
             await homeController.myHomeList(data, io)
         } catch (error) {

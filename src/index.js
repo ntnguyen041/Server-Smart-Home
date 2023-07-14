@@ -2,17 +2,21 @@ const express = require("express");
 const mongoose = require('mongoose');
 const http = require("http");
 const cors = require("cors");
+const { Expo } = require('expo-server-sdk');
+const axios = require('axios');
 const { Server } = require("socket.io");
 const userController = require('./controller/user.controller')
 const roomController = require('./controller/room.controller')
 const deviceController = require('./controller/device.controller')
 const homeController = require('./controller/home.controller')
 const notificationController = require('./controller/notification.controller')
-const Device = require('./model/device.model')
+const Home = require('./model/home.model')
 const schedule = require('node-schedule');
 
 require('dotenv').config();
 const User = require('./model/user.model')
+
+let expo = new Expo();
 
 const app = express();
 var port = process.env.PORT || 3001;
@@ -27,10 +31,10 @@ mongoose.connect(process.env.URL_MONGO, {
 })
     .then(() => console.log('Connected to MongoDB'))
     .catch((err) => console.error('Could not connect to MongoDB', err));
-// `http://localhost:3000`, 
+// `http://localhost:3000  https://smarthome-ckc.onrender.com`, 
 const io = new Server(server, {
     cors: {
-        origin: [`http://localhost:3000`],
+        origin: [`https://smarthome-ckc.onrender.com`],
         methods: ["GET", "POST"],
     },
 });
@@ -78,15 +82,15 @@ io.on("connection", (socket) => {
         }
     })
 
-    function getRandomArbitrary(min, max) {
-        return Math.floor(Math.random() * min) + max;
-    }
+    // function getRandomArbitrary(min, max) {
+    //     return Math.floor(Math.random() * min) + max;
+    // }
 
 
-    setInterval(function () {
-        socket.emit('randomNumber', { temperature: getRandomArbitrary(10, 25), inDoor: getRandomArbitrary(25, 35), outDoor: getRandomArbitrary(25, 35) })
+    // setInterval(function () {
+    //     socket.emit('randomNumber', { temperature: getRandomArbitrary(10, 25), inDoor: getRandomArbitrary(25, 35), outDoor: getRandomArbitrary(25, 35) })
 
-    }, 2000);
+    // }, 2000);
 
 
 
@@ -175,6 +179,10 @@ io.on("connection", (socket) => {
     socket.on('updateOnOff', async (dataDevice) => {
         deviceController.updateOnOff(dataDevice, io, socket);
     })
+    socket.on('updateDeviceOnOffEsp', async data => {
+        deviceController.updateDeviceOnOffEsp(data, io, socket)
+
+    })
 
     socket.on('getDeviceRunning', async (homdId) => {
         deviceController.getListDevicesRunning(homdId, io, socket);
@@ -198,8 +206,13 @@ io.on("connection", (socket) => {
     socket.on('updateScheduleOnOff', async (deviceData) => {
         deviceController.updateScheduleOnOff(deviceData, io, socket);
     })
+
     socket.on('deleteScheduleOnOff', async (deviceData) => {
         deviceController.deleteScheduleOnOff(deviceData, io, socket);
+    })
+
+    socket.on('updateConsumes', async (data) => {
+        deviceController.updateConsumes(data, io)
     })
 
     // Home
@@ -235,6 +248,10 @@ io.on("connection", (socket) => {
         notificationController.getListNotification(notificationData, io)
     })
 
+    socket.on('createNotification', async data => {
+        notificationController.createNotification(data, io)
+    })
+
     // notificationController.createNotification('zcv', 'zxcv', 'flashlight-outline', '64a3de2814b0c81928b21d97')
 
     socket.on('deleteNotification', async notificationData => {
@@ -243,21 +260,55 @@ io.on("connection", (socket) => {
 
     //
 
+    socket.on('resetDeviceState', async data => {
+        deviceController.resetDeviceState(data, io);
+    })
+
+    //
+    socket.on('weather', async data => {
+        const { homeId } = data;
+        io.to(homeId).emit('weather', data)
+    })
 
 
     //
 
-    socket.on('buttonState', async data => {
-        const { homeId, pinEsp, status } = data;
+    // socket.on('sendToken', async (token) => {
+
+    //     userController.sendTokenDeviceToEsp(token, io);
+    // })
 
 
-        console.log(data)
-        // const deviceUpdate = await Device.findOneAndUpdate({ pinEsp: pinEsp }, { status: status })
+    socket.on('sendToken', async (data) => {
+        const { token, homeId } = data;
+        await Home.findOneAndUpdate({ _id: homeId }, { tokens: "asdf" }).then((home) => console.log(home))
+        // console.log(data)
 
-        // socket.to(homeId).emit('deviceUpdated', { idDevice: deviceUpdate._id, status: status });
+        // // Make sure the token is an Expo push token
+        // if (!Expo.isExpoPushToken(token)) {
+        //     console.error(`Push token ${token} is not a valid Expo push token`);
+        //     return;
+        // }
 
-    })
+        // // Create a message object
+        // let message = {
+        //     to: token,
+        //     sound: 'default',
+        //     body: 'This is a test notification',
+        //     data: { homeId: homeId },
+        // };
 
+        // // Set an interval to send a push notification every 2 seconds
+
+        // try {
+        //     // Use the Expo API to send the message
+        //     let response = await axios.post('https://api.expo.dev/v2/push/send', message);
+        //     console.log(response.data);
+        // } catch (error) {
+        //     console.error(error);
+        // }
+
+    });
 
 });
 
