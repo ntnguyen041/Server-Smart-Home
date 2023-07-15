@@ -280,6 +280,9 @@ const deviceController = {
         ]
       });
 
+      console.log(new Date().getHours())
+      console.log(new Date().getMinutes())
+
       const devicesToUpdateOn = filterDevices(devices, currentDateTime);
       const devicesToUpdateOff = devices.filter(device => {
         const timeOff = moment(`${currentDateTime.toLocaleDateString()} ${device.timeOff}`, 'MM/DD/YYYY hh:mm A').toDate();
