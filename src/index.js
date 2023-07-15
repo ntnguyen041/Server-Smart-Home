@@ -59,7 +59,7 @@ io.on("connection", (socket) => {
     })
 
     socket.on('loginadmin', (data) => {
-       // console.log(data)
+        // console.log(data)
         userController.login(data, io);
     })// nguyen
     socket.on('joinRoom', token => {
@@ -254,6 +254,7 @@ io.on("connection", (socket) => {
         io.to(homeId).emit('weather', data)
     })
 
+   
 
     //
 
