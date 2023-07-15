@@ -264,7 +264,7 @@ const deviceController = {
 
   updateDeviceStatusBySchedule: async (io) => {
     try {
-      const currentDateTime = moment().tz('Asia/Ho_Chi_Minh');
+      const currentDateTime = moment().tz('Asia/Ho_Chi_Minh').toDate();
       const devices = await Device.find({
         $and: [
           { timeOn: { $ne: null } },
@@ -279,8 +279,6 @@ const deviceController = {
           }
         ]
       });
-
-      console.log(currentDateTime)
 
       const devicesToUpdateOn = filterDevices(devices, currentDateTime);
       const devicesToUpdateOff = devices.filter(device => {
