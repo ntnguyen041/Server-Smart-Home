@@ -9,6 +9,11 @@ const filterDevices = (devices, currentDateTime) => {
     const timeOn = moment(`${currentDateTime.toLocaleDateString()} ${device.timeOn}`, 'MM/DD/YYYY hh:mm A').toDate();
     const timeOff = moment(`${currentDateTime.toLocaleDateString()} ${device.timeOff}`, 'MM/DD/YYYY hh:mm A').toDate();
     const dayRunning = device.dayRunning.includes('everyday') || device.dayRunning.includes(currentDateTime.toLocaleString('en-US', { weekday: 'short' }));
+
+    console.log(timeOn)
+    console.log(currentDateTime)
+
+
     return moment(currentDateTime).isBetween(timeOn, timeOff, null, '[]') && dayRunning && device.dayRunningStatus;
   });
 };
@@ -279,6 +284,8 @@ const deviceController = {
           }
         ]
       });
+
+      console.log(devices)
 
       const devicesToUpdateOn = filterDevices(devices, currentDateTime);
       const devicesToUpdateOff = devices.filter(device => {
