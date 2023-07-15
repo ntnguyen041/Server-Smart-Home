@@ -207,6 +207,7 @@ const userController = {
     const arrDropDown = rooms.filter((room) => room !== null);
 
     io.emit(`updateDropDownHome${updatedUser.uid}`, { arrDropDown, home })
+    // io.emit(`weather${updatedUser.uid}`, { weather: [] })
     userController.listUserToRoomId(data, io)
   },
 
