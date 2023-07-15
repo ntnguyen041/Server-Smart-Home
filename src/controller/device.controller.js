@@ -113,7 +113,7 @@ const deviceController = {
     } catch (error) {
       console.error(error);
     }
-  },
+  }, 
 
   deleteDevice: async (deviceData, io, socket) => {
     const { deviceId, homeId, roomId } = deviceData;
