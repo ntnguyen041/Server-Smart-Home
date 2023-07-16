@@ -2,7 +2,7 @@ const Device = require('../model/device.model');
 const Room = require('../model/room.model');
 const User = require('../model/user.model');
 const roomController = require("./room.controller");
-const moment = require('moment-timezone');
+const moment = require('moment')
 
 const filterDevices = (devices, currentDateTime) => {
   return devices.filter(device => {
@@ -266,17 +266,26 @@ const deviceController = {
 
   updateDeviceStatusBySchedule: async (io) => {
     try {
-      const currentDateTime = moment().tz('Asia/Ho_Chi_Minh').tz('Etc/UTC').toDate();
+      const currentDateTime = moment().tz('Asia/Ho_Chi_Minh').toDate();
       const devices = await Device.find({
         $and: [
           { timeOn: { $ne: null } },
           { timeOff: { $ne: null } },
+          // {
+          //   dayRunning: {
+          //     $in: [
+          //       currentDateTime.toLocaleString('en-US', { weekday: 'short' }),
+          //       'everyday'
+          //     ]
+          //   }
+          // }
         ]
       });
 
+
       const devicesToUpdateOn = await devices.filter(device => {
-        const timeOn = moment(`${currentDateTime.toLocaleDateString()} ${device.timeOn}`, 'MM/DD/YYYY hh:mm A').tz('Asia/Ho_Chi_Minh').tz('Etc/UTC').toDate();
-        const timeOff = moment(`${currentDateTime.toLocaleDateString()} ${device.timeOff}`, 'MM/DD/YYYY hh:mm A').tz('Asia/Ho_Chi_Minh').tz('Etc/UTC').toDate();
+        const timeOn = moment(`${currentDateTime.toLocaleDateString()} ${device.timeOn}`, 'MM/DD/YYYY hh:mm A').toDate();
+        const timeOff = moment(`${currentDateTime.toLocaleDateString()} ${device.timeOff}`, 'MM/DD/YYYY hh:mm A').toDate();
         const dayRunning = device.dayRunning.includes('everyday') || device.dayRunning.includes(currentDateTime.toLocaleString('en-US', { weekday: 'short' }));
 
         console.log(timeOn)
@@ -286,7 +295,7 @@ const deviceController = {
       });
 
       const devicesToUpdateOff = await devices.filter(device => {
-        const timeOff = moment(`${currentDateTime.toLocaleDateString()} ${device.timeOff}`, 'MM/DD/YYYY hh:mm A').tz('Asia/Ho_Chi_Minh').tz('Etc/UTC').toDate();
+        const timeOff = moment(`${currentDateTime.toLocaleDateString()} ${device.timeOff}`, 'MM/DD/YYYY hh:mm A').toDate();
         const dayRunning = device.dayRunning.includes('everyday') || device.dayRunning.includes(currentDateTime.toLocaleString('en-US', { weekday: 'short' }));
 
         return currentDateTime > timeOff && dayRunning && device.dayRunningStatus;
