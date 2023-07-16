@@ -273,7 +273,8 @@ const deviceController = {
       ]
     });
 
-   
+    console.log(devices)
+
 
     const devicesToUpdateOn = devices.filter(device => {
       const format = 'hh:mm A'; // Changed from 'HH:mm'
@@ -281,14 +282,6 @@ const deviceController = {
       const timeOn = moment.tz(device.timeOn, format, timeZone);
       const timeOff = moment.tz(device.timeOff, format, timeZone);
       const dayRunning = device.dayRunning.includes('everyday') || device.dayRunning.includes(currentDateTime.format('ddd'));
-
-      console.log(timeOn);
-      console.log(timeOff);
-      console.log(currentDateTime > timeOn);
-      console.log(currentDateTime < timeOff);
-      console.log(currentDateTime.isBetween(timeOn, timeOff, null, '[]'));
-      console.log(dayRunning);
-      console.log(device.dayRunningStatus);
 
       return currentDateTime.isBetween(timeOn, timeOff, null, '[]') && dayRunning && device.dayRunningStatus;
     });
@@ -298,9 +291,7 @@ const deviceController = {
       const timeZone = 'Asia/Ho_Chi_Minh';
       const timeOff = moment.tz(device.timeOff, format, timeZone);
       const dayRunning = device.dayRunning.includes('everyday') || device.dayRunning.includes(currentDateTime.format('ddd'));
-      console.log(currentDateTime.isAfter(timeOff));
-      console.log(dayRunning);
-      console.log(device.dayRunningStatus);
+
       return currentDateTime.isAfter(timeOff) && dayRunning && device.dayRunningStatus;
     });
 
