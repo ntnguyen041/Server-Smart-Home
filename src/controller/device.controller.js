@@ -10,15 +10,12 @@ const filterDevices = (devices, currentDateTime) => {
     const timeOff = moment(`${currentDateTime.toLocaleDateString()} ${device.timeOff}`, 'MM/DD/YYYY hh:mm A').toDate();
     const dayRunning = device.dayRunning.includes('everyday') || device.dayRunning.includes(currentDateTime.toLocaleString('en-US', { weekday: 'short' }));
 
-    console.log(timeOn)
-    console.log(currentDateTime)
-
-
     return moment(currentDateTime).isBetween(timeOn, timeOff, null, '[]') && dayRunning && device.dayRunningStatus;
   });
 };
 
 const emitButtonStateAndSave = async (devicesToUpdate, io, status) => {
+
   const deviceIds = devicesToUpdate.map(device => device._id);
   for (const device of devicesToUpdate) {
     io.emit('buttonState', { status, pinEsp: device.pinEsp });
@@ -268,44 +265,41 @@ const deviceController = {
   },
 
   updateDeviceStatusBySchedule: async (io) => {
-    try {
-      const currentDateTime = moment().tz('Asia/Ho_Chi_Minh').toDate();
-      const devices = await Device.find({
-        $and: [
-          { timeOn: { $ne: null } },
-          { timeOff: { $ne: null } },
-          {
-            dayRunning: {
-              $in: [
-                currentDateTime.toLocaleString('en-US', { weekday: 'short' }),
-                'everyday'
-              ]
-            }
-          }
-        ]
-      });
+    const currentDateTime = moment().tz('Asia/Ho_Chi_Minh');
+    const devices = await Device.find({
+      $and: [
+        { timeOn: { $ne: null } },
+        { timeOff: { $ne: null } },
+      ]
+    });
 
-     const device = await Device.find();
 
-      console.log(device)
 
-      const devicesToUpdateOn = filterDevices(devices, currentDateTime);
-      const devicesToUpdateOff = devices.filter(device => {
-        const timeOff = moment(`${currentDateTime.toLocaleDateString()} ${device.timeOff}`, 'MM/DD/YYYY hh:mm A').toDate();
-        const dayRunning = device.dayRunning.includes('everyday') || device.dayRunning.includes(currentDateTime.toLocaleString('en-US', { weekday: 'short' }));
+    const devicesToUpdateOn = devices.filter(device => {
+      const format = 'hh:mm A'; // Changed from 'HH:mm'
+      const timeZone = 'Asia/Ho_Chi_Minh';
+      const timeOn = moment.tz(device.timeOn, format, timeZone);
+      const timeOff = moment.tz(device.timeOff, format, timeZone);
+      const dayRunning = device.dayRunning.includes('everyday') || device.dayRunning.includes(currentDateTime.format('ddd'));
 
-        return currentDateTime > timeOff && dayRunning && device.dayRunningStatus;
-      });
+      return currentDateTime.isBetween(timeOn, timeOff, null, '[]') && dayRunning && device.dayRunningStatus;
+    });
 
-      if (devicesToUpdateOn.length > 0) {
-        await emitButtonStateAndSave(devicesToUpdateOn, io, true);
-      }
+    const devicesToUpdateOff = devices.filter(device => {
+      const format = 'HH:mm A';
+      const timeZone = 'Asia/Ho_Chi_Minh';
+      const timeOff = moment.tz(device.timeOff, format, timeZone);
+      const dayRunning = device.dayRunning.includes('everyday') || device.dayRunning.includes(currentDateTime.format('ddd'));
 
-      if (devicesToUpdateOff.length > 0) {
-        await emitButtonStateAndSave(devicesToUpdateOff, io, false);
-      }
-    } catch (error) {
-      console.error('Error updating device status by schedule:', error);
+      return currentDateTime.isAfter(timeOff) && dayRunning && device.dayRunningStatus;
+    });
+
+    if (devicesToUpdateOn.length > 0) {
+      await emitButtonStateAndSave(devicesToUpdateOn, io, true);
+    }
+
+    if (devicesToUpdateOff.length > 0) {
+      await emitButtonStateAndSave(devicesToUpdateOff, io, false);
     }
   },
 
