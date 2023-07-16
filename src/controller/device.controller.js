@@ -288,15 +288,10 @@ const deviceController = {
         const timeOff = moment(`${currentDateTime.toLocaleDateString()} ${device.timeOff}`, 'MM/DD/YYYY hh:mm A').toDate();
         const dayRunning = device.dayRunning.includes('everyday') || device.dayRunning.includes(currentDateTime.toLocaleString('en-US', { weekday: 'short' }));
 
+        console.log(timeOn)
+        console.log(currentDateTime)
 
-
-        console.log(currentDateTime.valueOf())
-        console.log(timeOn.valueOf())
-        console.log(currentDateTime.valueOf() > timeOn.valueOf() && currentDateTime.valueOf() < timeOff.valueOf())
-        console.log(dayRunning)
-        console.log(device.dayRunningStatus)
-
-        return currentDateTime.valueOf() > timeOn.valueOf() && currentDateTime.valueOf() < timeOff.valueOf() && dayRunning && device.dayRunningStatus;
+        return moment(currentDateTime).isBetween(timeOn, timeOff, null, '[]') && dayRunning && device.dayRunningStatus
       });
 
       const devicesToUpdateOff = await devices.filter(device => {
