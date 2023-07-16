@@ -104,7 +104,7 @@ const deviceController = {
         countOn++;
       }
 
-      const deviceUpdate = await Device.findByIdAndUpdate(idDevice, { status: status, countOn: countOn, dayRunningStatus: false });
+      const deviceUpdate = await Device.findByIdAndUpdate(idDevice, { status: status, countOn: countOn});
 
       io.to(homeId).emit('deviceUpdated', { idDevice: deviceUpdate._id, status: status });
 
@@ -273,7 +273,7 @@ const deviceController = {
       ]
     });
 
-    console.log(devices)
+    //console.log(devices)
 
 
     const devicesToUpdateOn = devices.filter(device => {
@@ -294,7 +294,7 @@ const deviceController = {
 
       return currentDateTime.isAfter(timeOff) && dayRunning && device.dayRunningStatus;
     });
-
+    
     if (devicesToUpdateOn.length > 0) {
       await emitButtonStateAndSave(devicesToUpdateOn, io, true);
     }
