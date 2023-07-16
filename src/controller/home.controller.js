@@ -35,6 +35,16 @@ const homeController = {
             console.log(error);
         }
     },
+    getList1: async (data, io, socket) => {
+        //console.log(data);
+        const {homeId,_id}= data;
+        try {
+            const homes = await Home.findById(homeId).populate('roomId');
+            io.to(_id).emit("listRoom1", homes.roomId)
+        } catch (error) {
+            console.log(error);
+        }
+    },
     createHome: async (dataHome, io) => {
         try {
             const { uid } = dataHome;

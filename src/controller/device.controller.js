@@ -9,13 +9,11 @@ const filterDevices = (devices, currentDateTime) => {
     const timeOn = moment(`${currentDateTime.toLocaleDateString()} ${device.timeOn}`, 'MM/DD/YYYY hh:mm A').toDate();
     const timeOff = moment(`${currentDateTime.toLocaleDateString()} ${device.timeOff}`, 'MM/DD/YYYY hh:mm A').toDate();
     const dayRunning = device.dayRunning.includes('everyday') || device.dayRunning.includes(currentDateTime.toLocaleString('en-US', { weekday: 'short' }));
-
     return moment(currentDateTime).isBetween(timeOn, timeOff, null, '[]') && dayRunning && device.dayRunningStatus;
   });
 };
 
 const emitButtonStateAndSave = async (devicesToUpdate, io, status) => {
-
   const deviceIds = devicesToUpdate.map(device => device._id);
   for (const device of devicesToUpdate) {
     io.emit('buttonState', { status, pinEsp: device.pinEsp });
@@ -104,7 +102,7 @@ const deviceController = {
         countOn++;
       }
 
-      const deviceUpdate = await Device.findByIdAndUpdate(idDevice, { status: status, countOn: countOn, dayRunningStatus: false });
+      const deviceUpdate = await Device.findByIdAndUpdate(idDevice, { status: status, countOn: countOn});
 
       io.to(homeId).emit('deviceUpdated', { idDevice: deviceUpdate._id, status: status });
 
@@ -245,7 +243,7 @@ const deviceController = {
       // Check if a device with the same homeId and pinEsp already exists
       const existingDevice = await Device.findOne({ homeId, pinEsp });
       if (existingDevice) {
-        //console.log(`A device with homeId ${homeId} and pinEsp ${pinEsp} already exists`);
+        console.log(`A device with homeId ${homeId} and pinEsp ${pinEsp} already exists`);
         io.emit(`qrScanFailed${uid}`, `This device is added to the ${existingDevice.roomName}`)
         return; // Exit function early without creating a new device
       }
@@ -264,55 +262,55 @@ const deviceController = {
     }
   },
 
-  // updateDeviceStatusBySchedule: async (io) => {
-  //   const currentDateTime = moment().tz('Asia/Ho_Chi_Minh');
-  //   const devices = await Device.find({
-  //     $and: [
-  //       { timeOn: { $ne: null } },
-  //       { timeOff: { $ne: null } },
-  //     ]
-  //   });
+  updateDeviceStatusBySchedule: async (io) => {
+    try {
+      const currentDateTime = moment().tz('Asia/Ho_Chi_Minh');
+      const devices = await Device.find({
+        $and: [
+          { timeOn: { $ne: null } },
+          { timeOff: { $ne: null } },
+          {
+            dayRunning: {
+              $in: [
+                currentDateTime.format('ddd'),
+                'everyday'
+              ]
+            }
+          }
+        ]
+      });
 
-   
+      const devicesToUpdateOn = devices.filter(device => {
+        const format = 'YYYY-MM-DD hh:mm A'; // Update the format to include date
+        const timeZone = 'Asia/Ho_Chi_Minh';
+        const currentDate = moment.tz(currentDateTime, timeZone).format('YYYY-MM-DD');
+        const timeOn = moment.tz(`${currentDate} ${device.timeOn}`, format, timeZone);
+        const timeOff = moment.tz(`${currentDate} ${device.timeOff}`, format, timeZone);
+        const dayRunning = device.dayRunning.includes('everyday') || device.dayRunning.includes(currentDateTime.format('ddd'));
 
-  //   const devicesToUpdateOn = devices.filter(device => {
-  //     const format = 'hh:mm A'; // Changed from 'HH:mm'
-  //     const timeZone = 'Asia/Ho_Chi_Minh';
-  //     const timeOn = moment.tz(device.timeOn, format, timeZone);
-  //     const timeOff = moment.tz(device.timeOff, format, timeZone);
-  //     const dayRunning = device.dayRunning.includes('everyday') || device.dayRunning.includes(currentDateTime.format('ddd'));
+        return moment(currentDateTime).isBetween(timeOn, timeOff, null, '[]') && dayRunning && device.dayRunningStatus;
+      });// Make sure filterDevices also use moment.tz()
+      const devicesToUpdateOff = devices.filter(device => {
+        const format = 'YYYY-MM-DD hh:mm A'; // Update the format to include date
+        const timeZone = 'Asia/Ho_Chi_Minh';
+        const currentDate = moment.tz(currentDateTime, timeZone).format('YYYY-MM-DD');
+        const timeOff = moment.tz(`${currentDate} ${device.timeOff}`, format, timeZone);
+        const dayRunning = device.dayRunning.includes('everyday') || device.dayRunning.includes(currentDateTime.format('ddd'));
 
-  //     console.log(timeOn);
-  //     console.log(timeOff);
-  //     console.log(currentDateTime > timeOn);
-  //     console.log(currentDateTime < timeOff);
-  //     console.log(currentDateTime.isBetween(timeOn, timeOff, null, '[]'));
-  //     console.log(dayRunning);
-  //     console.log(device.dayRunningStatus);
+        return currentDateTime.isAfter(timeOff) && dayRunning && device.dayRunningStatus;
+      });
 
-  //     return currentDateTime.isBetween(timeOn, timeOff, null, '[]') && dayRunning && device.dayRunningStatus;
-  //   });
+      if (devicesToUpdateOn.length > 0) {
+        await emitButtonStateAndSave(devicesToUpdateOn, io, true);
+      }
 
-
-  //   const devicesToUpdateOff = devices.filter(device => {
-  //     const format = 'HH:mm A';
-  //     const timeZone = 'Asia/Ho_Chi_Minh';
-  //     const timeOff = moment.tz(device.timeOff, format, timeZone);
-  //     const dayRunning = device.dayRunning.includes('everyday') || device.dayRunning.includes(currentDateTime.format('ddd'));
-  //     console.log(currentDateTime.isAfter(timeOff));
-  //     console.log(dayRunning);
-  //     console.log(device.dayRunningStatus);
-  //     return currentDateTime.isAfter(timeOff) && dayRunning && device.dayRunningStatus;
-  //   });
-
-  //   if (devicesToUpdateOn.length > 0) {
-  //     await emitButtonStateAndSave(devicesToUpdateOn, io, true);
-  //   }
-
-  //   if (devicesToUpdateOff.length > 0) {
-  //     await emitButtonStateAndSave(devicesToUpdateOff, io, false);
-  //   }
-  // },
+      if (devicesToUpdateOff.length > 0) {
+        await emitButtonStateAndSave(devicesToUpdateOff, io, false);
+      }
+    } catch (error) {
+      console.error('Error updating device status by schedule:', error);
+    }
+  },
 
   reportDataDevice: async (data, io) => {
     const { homeId } = data;
@@ -349,7 +347,7 @@ const deviceController = {
   },
   updateConsumes: async (data, io) => {
     const { homeId, consumes, pinEsp } = data;
-    let resultConsume = Math.round(consumes * 100) / 100
+    let resultConsume = Math.round((consumes * 100)/100)
 
     try {
       const updatedDevice = await Device.findOneAndUpdate(
