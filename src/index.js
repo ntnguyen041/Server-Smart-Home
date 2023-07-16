@@ -10,7 +10,7 @@ const roomController = require('./controller/room.controller')
 const deviceController = require('./controller/device.controller')
 const homeController = require('./controller/home.controller')
 const notificationController = require('./controller/notification.controller')
-const schedule = require('node-schedule');
+// const schedule = require('node-schedule');
 
 require('dotenv').config();
 
@@ -45,14 +45,14 @@ io.on("connection", (socket) => {
 
     console.log(`User connect: ${socket.id}`);
 
-    const scheduleDeviceUpdate = () => {
-        schedule.scheduleJob('* * * * *', async () => {
-            await deviceController.updateDeviceStatusBySchedule(io);
-        });
-    };
+    // const scheduleDeviceUpdate = () => {
+    //     schedule.scheduleJob('* * * * *', async () => {
+    //         await deviceController.updateDeviceStatusBySchedule(io);
+    //     });
+    // };
 
-    // Sử dụng hàm này 89/*--*
-    scheduleDeviceUpdate();
+    // // Sử dụng hàm này 89/*--*
+    // scheduleDeviceUpdate();
 
     socket.on('DataSensor', data => {
         io.emit('DataSensor', data)
