@@ -104,7 +104,7 @@ const deviceController = {
         countOn++;
       }
 
-      const deviceUpdate = await Device.findByIdAndUpdate(idDevice, { status: status, countOn: countOn, dayRunningStatus: false });
+      const deviceUpdate = await Device.findByIdAndUpdate(idDevice, { status: status, countOn: countOn});
 
       io.to(homeId).emit('deviceUpdated', { idDevice: deviceUpdate._id, status: status });
 
