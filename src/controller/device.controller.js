@@ -113,7 +113,7 @@ const deviceController = {
     } catch (error) {
       console.error(error);
     }
-  }, 
+  },
 
   deleteDevice: async (deviceData, io, socket) => {
     const { deviceId, homeId, roomId } = deviceData;
@@ -335,8 +335,7 @@ const deviceController = {
   },
   updateConsumes: async (data, io) => {
     const { homeId, consumes, pinEsp } = data;
-    let resultConsume = Math.round(consumes * 100) / 100
-
+    let resultConsume = Math.round((consumes * 100)/100)
     try {
       const updatedDevice = await Device.findOneAndUpdate(
         { homeId: homeId, pinEsp: pinEsp },
