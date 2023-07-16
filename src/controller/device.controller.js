@@ -19,6 +19,9 @@ const filterDevices = (devices, currentDateTime) => {
 };
 
 const emitButtonStateAndSave = async (devicesToUpdate, io, status) => {
+
+  console.log(status ? true : false)
+
   const deviceIds = devicesToUpdate.map(device => device._id);
   for (const device of devicesToUpdate) {
     io.emit('buttonState', { status, pinEsp: device.pinEsp });
