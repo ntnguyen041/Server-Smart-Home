@@ -10,17 +10,11 @@ const filterDevices = (devices, currentDateTime) => {
     const timeOff = moment(`${currentDateTime.toLocaleDateString()} ${device.timeOff}`, 'MM/DD/YYYY hh:mm A').toDate();
     const dayRunning = device.dayRunning.includes('everyday') || device.dayRunning.includes(currentDateTime.toLocaleString('en-US', { weekday: 'short' }));
 
-    console.log(timeOn)
-    console.log(currentDateTime)
-
-
     return moment(currentDateTime).isBetween(timeOn, timeOff, null, '[]') && dayRunning && device.dayRunningStatus;
   });
 };
 
 const emitButtonStateAndSave = async (devicesToUpdate, io, status) => {
-
-  console.log(status ? true : false)
 
   const deviceIds = devicesToUpdate.map(device => device._id);
   for (const device of devicesToUpdate) {
@@ -290,8 +284,8 @@ const deviceController = {
 
       console.log(devices)
 
-      const devicesToUpdateOn = filterDevices(devices, currentDateTime);
-      const devicesToUpdateOff = devices.filter(device => {
+      const devicesToUpdateOn = await filterDevices(devices, currentDateTime);
+      const devicesToUpdateOff = await devices.filter(device => {
         const timeOff = moment(`${currentDateTime.toLocaleDateString()} ${device.timeOff}`, 'MM/DD/YYYY hh:mm A').toDate();
         const dayRunning = device.dayRunning.includes('everyday') || device.dayRunning.includes(currentDateTime.toLocaleString('en-US', { weekday: 'short' }));
 
@@ -299,10 +293,12 @@ const deviceController = {
       });
 
       if (devicesToUpdateOn.length > 0) {
+        console.log("true")
         await emitButtonStateAndSave(devicesToUpdateOn, io, true);
       }
 
       if (devicesToUpdateOff.length > 0) {
+        console.log("false")
         await emitButtonStateAndSave(devicesToUpdateOff, io, false);
       }
     } catch (error) {
