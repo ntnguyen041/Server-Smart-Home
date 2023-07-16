@@ -273,6 +273,7 @@ const deviceController = {
       ]
     });
 
+    console.log(devices)
 
 
     const devicesToUpdateOn = devices.filter(device => {
