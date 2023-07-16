@@ -266,7 +266,7 @@ const deviceController = {
 
   updateDeviceStatusBySchedule: async (io) => {
     try {
-      const currentDateTime = moment().tz('Asia/Ho_Chi_Minh').toDate();
+      const currentDateTime = moment().utcOffset('+00:00');
       const devices = await Device.find({
         $and: [
           { timeOn: { $ne: null } },
@@ -274,7 +274,7 @@ const deviceController = {
           // {
           //   dayRunning: {
           //     $in: [
-          //       currentDateTime.toLocaleString('en-US', { weekday: 'short' }),
+          //       currentDateTime.locale('en-US').weekday(),
           //       'everyday'
           //     ]
           //   }
@@ -282,23 +282,22 @@ const deviceController = {
         ]
       });
 
-
       const devicesToUpdateOn = await devices.filter(device => {
-        const timeOn = moment(`${currentDateTime.toLocaleDateString()} ${device.timeOn}`, 'MM/DD/YYYY hh:mm A').toDate();
-        const timeOff = moment(`${currentDateTime.toLocaleDateString()} ${device.timeOff}`, 'MM/DD/YYYY hh:mm A').toDate();
-        const dayRunning = device.dayRunning.includes('everyday') || device.dayRunning.includes(currentDateTime.toLocaleString('en-US', { weekday: 'short' }));
+        const timeOn = moment(`${currentDateTime.format('MM/DD/YYYY')} ${device.timeOn}`, 'MM/DD/YYYY hh:mm A').tz('Asia/Ho_Chi_Minh').utcOffset('+00:00');
+        const timeOff = moment(`${currentDateTime.format('MM/DD/YYYY')} ${device.timeOff}`, 'MM/DD/YYYY hh:mm A').tz('Asia/Ho_Chi_Minh').utcOffset('+00:00');
+        const dayRunning = device.dayRunning.includes('everyday') || device.dayRunning.includes(currentDateTime.locale('en-US').weekday());
 
         console.log(timeOn)
         console.log(currentDateTime)
 
-        return moment(currentDateTime).isBetween(timeOn, timeOff, null, '[]') && dayRunning && device.dayRunningStatus
+        return currentDateTime.isBetween(timeOn, timeOff, null, '[]') && dayRunning && device.dayRunningStatus
       });
 
       const devicesToUpdateOff = await devices.filter(device => {
-        const timeOff = moment(`${currentDateTime.toLocaleDateString()} ${device.timeOff}`, 'MM/DD/YYYY hh:mm A').toDate();
-        const dayRunning = device.dayRunning.includes('everyday') || device.dayRunning.includes(currentDateTime.toLocaleString('en-US', { weekday: 'short' }));
+        const timeOff = moment(`${currentDateTime.format('MM/DD/YYYY')} ${device.timeOff}`, 'MM/DD/YYYY hh:mm A').tz('Asia/Ho_Chi_Minh').utcOffset('+00:00');
+        const dayRunning = device.dayRunning.includes('everyday') || device.dayRunning.includes(currentDateTime.locale('en-US').weekday());
 
-        return currentDateTime > timeOff && dayRunning && device.dayRunningStatus;
+        return currentDateTime.isAfter(timeOff) && dayRunning && device.dayRunningStatus;
       });
 
       if (devicesToUpdateOn.length > 0) {
