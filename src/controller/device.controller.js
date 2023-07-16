@@ -282,7 +282,6 @@ const deviceController = {
         ]
       });
 
-      console.log(devices)
 
       const devicesToUpdateOn = await filterDevices(devices, currentDateTime);
       const devicesToUpdateOff = await devices.filter(device => {
