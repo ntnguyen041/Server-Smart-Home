@@ -274,20 +274,18 @@ const deviceController = {
         $and: [
           { timeOn: { $ne: null } },
           { timeOff: { $ne: null } },
-          {
-            dayRunning: {
-              $in: [
-                currentDateTime.toLocaleString('en-US', { weekday: 'short' }),
-                'everyday'
-              ]
-            }
-          }
+          // {
+          //   dayRunning: {
+          //     $in: [
+          //       currentDateTime.toLocaleString('en-US', { weekday: 'short' }),
+          //       'everyday'
+          //     ]
+          //   }
+          // }
         ]
       });
 
-     const device = await Device.find();
-
-      console.log(device)
+      console.log(devices)
 
       const devicesToUpdateOn = filterDevices(devices, currentDateTime);
       const devicesToUpdateOff = devices.filter(device => {
