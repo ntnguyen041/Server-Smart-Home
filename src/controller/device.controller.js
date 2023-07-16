@@ -292,13 +292,16 @@ const deviceController = {
         return currentDateTime > timeOff && dayRunning && device.dayRunningStatus;
       });
 
+      console.log(devicesToUpdateOn)
+      console.log(devicesToUpdateOn.length)
+      console.log(devicesToUpdateOff)
+      console.log(devicesToUpdateOff.length)
+
       if (devicesToUpdateOn.length > 0) {
-        console.log("true")
         await emitButtonStateAndSave(devicesToUpdateOn, io, true);
       }
 
       if (devicesToUpdateOff.length > 0) {
-        console.log("false")
         await emitButtonStateAndSave(devicesToUpdateOff, io, false);
       }
     } catch (error) {
