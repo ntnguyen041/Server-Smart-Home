@@ -265,50 +265,41 @@ const deviceController = {
   },
 
   updateDeviceStatusBySchedule: async (io) => {
-    try {
-      const currentDateTime = moment().utcOffset('+00:00');
-      const devices = await Device.find({
-        $and: [
-          { timeOn: { $ne: null } },
-          { timeOff: { $ne: null } },
-          // {
-          //   dayRunning: {
-          //     $in: [
-          //       currentDateTime.locale('en-US').weekday(),
-          //       'everyday'
-          //     ]
-          //   }
-          // }
-        ]
-      });
+    const currentDateTime = moment().tz('Asia/Ho_Chi_Minh');
+    const devices = await Device.find({
+      $and: [
+        { timeOn: { $ne: null } },
+        { timeOff: { $ne: null } },
+      ]
+    });
 
-      const devicesToUpdateOn = await devices.filter(device => {
-        const timeOn = moment(`${currentDateTime.format('MM/DD/YYYY')} ${device.timeOn}`, 'MM/DD/YYYY hh:mm A').tz('Asia/Ho_Chi_Minh').utcOffset('+00:00');
-        const timeOff = moment(`${currentDateTime.format('MM/DD/YYYY')} ${device.timeOff}`, 'MM/DD/YYYY hh:mm A').tz('Asia/Ho_Chi_Minh').utcOffset('+00:00');
-        const dayRunning = device.dayRunning.includes('everyday') || device.dayRunning.includes(currentDateTime.locale('en-US').weekday());
 
-        console.log(timeOn)
-        console.log(currentDateTime)
 
-        return currentDateTime.isBetween(timeOn, timeOff, null, '[]') && dayRunning && device.dayRunningStatus
-      });
+    const devicesToUpdateOn = devices.filter(device => {
+      const format = 'hh:mm A'; // Changed from 'HH:mm'
+      const timeZone = 'Asia/Ho_Chi_Minh';
+      const timeOn = moment.tz(device.timeOn, format, timeZone);
+      const timeOff = moment.tz(device.timeOff, format, timeZone);
+      const dayRunning = device.dayRunning.includes('everyday') || device.dayRunning.includes(currentDateTime.format('ddd'));
 
-      const devicesToUpdateOff = await devices.filter(device => {
-        const timeOff = moment(`${currentDateTime.format('MM/DD/YYYY')} ${device.timeOff}`, 'MM/DD/YYYY hh:mm A').tz('Asia/Ho_Chi_Minh').utcOffset('+00:00');
-        const dayRunning = device.dayRunning.includes('everyday') || device.dayRunning.includes(currentDateTime.locale('en-US').weekday());
+      return currentDateTime.isBetween(timeOn, timeOff, null, '[]') && dayRunning && device.dayRunningStatus;
+    });
 
-        return currentDateTime.isAfter(timeOff) && dayRunning && device.dayRunningStatus;
-      });
+    const devicesToUpdateOff = devices.filter(device => {
+      const format = 'HH:mm A';
+      const timeZone = 'Asia/Ho_Chi_Minh';
+      const timeOff = moment.tz(device.timeOff, format, timeZone);
+      const dayRunning = device.dayRunning.includes('everyday') || device.dayRunning.includes(currentDateTime.format('ddd'));
 
-      if (devicesToUpdateOn.length > 0) {
-        await emitButtonStateAndSave(devicesToUpdateOn, io, true);
-      }
+      return currentDateTime.isAfter(timeOff) && dayRunning && device.dayRunningStatus;
+    });
 
-      if (devicesToUpdateOff.length > 0) {
-        await emitButtonStateAndSave(devicesToUpdateOff, io, false);
-      }
-    } catch (error) {
-      console.error('Error updating device status by schedule:', error);
+    if (devicesToUpdateOn.length > 0) {
+      await emitButtonStateAndSave(devicesToUpdateOn, io, true);
+    }
+
+    if (devicesToUpdateOff.length > 0) {
+      await emitButtonStateAndSave(devicesToUpdateOff, io, false);
     }
   },
 
