@@ -68,7 +68,6 @@ const deviceController = {
   createDevice: async (deviceData, io, socket) => {
     const { homeId, roomId, dataDevice, roomName, uid } = deviceData;
 
-
     const devices = dataDevice.map(deviceItem => {
       const { nameDevice, iconName } = deviceItem;
       return new Device({ nameDevice, iconName, homeId, roomName, roomId });

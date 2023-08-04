@@ -213,7 +213,7 @@ const userController = {
 
   sendTokenDeviceToEsp: async (token, io) => {
     console.log(token)
-  }
+  },
 }
 
 module.exports = userController;
